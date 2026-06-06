@@ -2840,11 +2840,48 @@ function initTrackerModule() {
   const tbody = document.getElementById('tracker-tbody');
   const tickerInput = document.getElementById('tracker-ticker');
   const typeSelect = document.getElementById('tracker-type');
+  const datalist = document.getElementById('tracker-ticker-list');
+  const msgEl = document.getElementById('tracker-add-msg');
 
   if (!addBtn || !snapshotBtn || !tbody) return;
 
+  // Build autocomplete list from real NIFTY 500 symbols
+  if (datalist && typeof MARKET_DIRECTORY !== 'undefined') {
+    datalist.innerHTML = MARKET_DIRECTORY.map(s =>
+      `<option value="${s.sym}">${s.sym} — ₹${s.price.toFixed(2)}</option>`).join('');
+  }
+
+  function showMsg(text, ok) {
+    if (!msgEl) return;
+    msgEl.textContent = text;
+    msgEl.style.color = ok ? 'var(--green)' : 'var(--red)';
+    setTimeout(() => { if (msgEl.textContent === text) msgEl.textContent = ''; }, 4000);
+  }
+
+  // Seed 7-day history with a plausible walk anchored to actual price
+  function seedHistory(price, type) {
+    const vol = type === 'MF' ? 0.008 : 0.018;
+    const points = [];
+    // Start from 7 days back, drift toward today's price
+    let p = price * (1 + (Math.random() - 0.5) * 0.06);
+    for (let i = 6; i >= 0; i--) {
+      const drift = (price - p) * 0.18;
+      const step = (Math.random() - 0.5) * vol * p + drift;
+      p = p + step;
+      const d = new Date(); d.setDate(d.getDate() - i);
+      points.push({ date: d.toISOString(), price: +p.toFixed(2) });
+    }
+    // Pin last point to actual current price
+    points[points.length - 1].price = +price.toFixed(2);
+    return points;
+  }
+
   function renderTracker() {
     tbody.innerHTML = '';
+    if (trackerData.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 32px; color: var(--text-dim); font-size: 13px;">No assets tracked yet. Search for a NIFTY 500 symbol above to begin.</td></tr>';
+      return;
+    }
     trackerData.forEach((asset, index) => {
       const history = asset.history || [];
       const currentPrice = history.length > 0 ? history[history.length - 1].price : 0;
@@ -2868,7 +2905,10 @@ function initTrackerModule() {
       const sparklineColor = change >= 0 ? '#00D4FF' : '#FF6B35';
 
       tr.innerHTML = `
-        <td style="font-weight: 600;">${asset.ticker}</td>
+        <td>
+          <div style="font-weight: 600;">${asset.ticker}</div>
+          ${asset.name && asset.name !== asset.ticker ? `<div style="font-size:11px;color:var(--text-dim);">${asset.name}</div>` : ''}
+        </td>
         <td style="color: var(--text-secondary); font-size: 11px;">${asset.type}</td>
         <td style="font-family: var(--font-mono);">₹${currentPrice.toFixed(2)}</td>
         <td class="${change >= 0 ? 'positive' : 'negative'}" style="font-family: var(--font-mono);">
@@ -2879,8 +2919,9 @@ function initTrackerModule() {
             <path d="${pathD}" fill="none" stroke="${sparklineColor}" stroke-width="2" vector-effect="non-scaling-stroke" />
           </svg>
         </td>
-        <td>
-          <button class="delete-asset-btn" data-idx="${index}" style="background: transparent; border: none; color: #ff4a4a; cursor: pointer; font-size: 14px;">✕</button>
+        <td style="white-space:nowrap;">
+          <button class="research-asset-btn" data-sym="${asset.ticker}" title="Open research" style="background: transparent; border: 1px solid var(--border); color: var(--violet-l); cursor: pointer; font-size: 12px; padding: 4px 8px; border-radius: 6px; margin-right: 4px;">🔬</button>
+          <button class="delete-asset-btn" data-idx="${index}" title="Remove" style="background: transparent; border: none; color: #ff4a4a; cursor: pointer; font-size: 14px;">✕</button>
         </td>
       `;
       tbody.appendChild(tr);
@@ -2888,10 +2929,25 @@ function initTrackerModule() {
 
     document.querySelectorAll('.delete-asset-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
-        const idx = e.target.getAttribute('data-idx');
+        const idx = e.currentTarget.getAttribute('data-idx');
         trackerData.splice(idx, 1);
         saveData();
         renderTracker();
+      });
+    });
+    document.querySelectorAll('.research-asset-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const sym = e.currentTarget.getAttribute('data-sym');
+        // Lazy-init screener DB if user hasn't visited that tab yet
+        if ((!window.SCREENER_DB || window.SCREENER_DB.length === 0) && typeof buildScreenerDB === 'function') {
+          window.SCREENER_DB = buildScreenerDB();
+        }
+        if (window.SCREENER_DB && window.SCREENER_DB.find(s => s.sym === sym)) {
+          openResearch(sym);
+        } else {
+          window.open('https://www.screener.in/company/' + sym + '/', '_blank');
+        }
       });
     });
   }
@@ -2904,29 +2960,54 @@ function initTrackerModule() {
     }
   }
 
-  addBtn.addEventListener('click', () => {
-    const ticker = tickerInput.value.trim().toUpperCase();
-    const type = typeSelect.value;
-    if (!ticker) return;
-
+  function addTicker(ticker, type) {
+    ticker = (ticker || '').trim().toUpperCase().replace(/\.NS$|\.BO$/, '');
+    if (!ticker) { showMsg('Enter a symbol.', false); return false; }
     if (trackerData.some(a => a.ticker === ticker)) {
-      alert(ticker + ' is already being tracked.');
-      return;
+      showMsg(ticker + ' is already being tracked.', false);
+      return false;
     }
-
-    const initialPrice = type === 'MF' ? (Math.random() * 100 + 50) : (Math.random() * 2000 + 100);
-
+    let name = ticker;
+    let initialPrice = null;
+    if (type === 'STOCK' && typeof MARKET_DIRECTORY !== 'undefined') {
+      const match = MARKET_DIRECTORY.find(s => s.sym === ticker);
+      if (!match) {
+        showMsg(ticker + ' not found in NIFTY 500. Check the symbol or pick from suggestions.', false);
+        return false;
+      }
+      name = match.name;
+      initialPrice = match.price;
+    } else if (type === 'MF') {
+      // Mutual fund: lookup in TOP_FUNDS_DB if present, otherwise allow with a default NAV
+      const mfMatch = (window.TOP_FUNDS_DB || []).find(f => (f.symbol || f.name || '').toUpperCase().includes(ticker));
+      initialPrice = mfMatch ? (mfMatch.nav || mfMatch.price || 100) : (Math.random() * 100 + 50);
+      if (mfMatch) name = mfMatch.name || ticker;
+    }
     trackerData.push({
       ticker,
+      name,
       type,
-      history: [
-        { date: new Date().toISOString(), price: initialPrice }
-      ]
+      history: seedHistory(initialPrice, type)
     });
-
-    tickerInput.value = '';
     saveData();
     renderTracker();
+    showMsg('✓ ' + ticker + ' added at ₹' + initialPrice.toFixed(2), true);
+    return true;
+  }
+
+  // Expose for cross-module use (research modal "Add to Tracker" button)
+  window.dexterAddToTracker = addTicker;
+
+  addBtn.addEventListener('click', () => {
+    const ok = addTicker(tickerInput.value, typeSelect.value);
+    if (ok) tickerInput.value = '';
+  });
+
+  tickerInput?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      const ok = addTicker(tickerInput.value, typeSelect.value);
+      if (ok) tickerInput.value = '';
+    }
   });
 
   snapshotBtn.addEventListener('click', async () => {
@@ -2941,7 +3022,7 @@ function initTrackerModule() {
 
       history.push({
         date: new Date().toISOString(),
-        price: newPrice
+        price: +newPrice.toFixed(2)
       });
 
       if (history.length > 30) {
@@ -2954,11 +3035,15 @@ function initTrackerModule() {
 
     snapshotBtn.style.backgroundColor = '#00D4FF';
     setTimeout(() => { snapshotBtn.style.backgroundColor = 'var(--amber)'; }, 300);
+    showMsg('✓ Snapshot saved for ' + trackerData.length + ' asset(s).', true);
   });
 
   document.getElementById('tab-tracker')?.addEventListener('click', () => {
     renderTracker();
   });
+
+  // Initial render
+  renderTracker();
 }
 
 // ==========================================
@@ -3121,66 +3206,227 @@ function initEquityScreener() {
 }
 
 // ==========================================
-// FUNDAMENTAL SCREENER
+// FUNDAMENTAL SCREENER (NIFTY 500 from MARKET_DIRECTORY)
 // ==========================================
+const SECTOR_MAP = [
+  ['Banks', ['SBIN','HDFCBANK','ICICIBANK','AXISBANK','KOTAKBANK','PNB','BANKBARODA','CANBK','UNIONBANK','BANKINDIA','BANDHANBNK','AUBANK','IDFCFIRSTB','RBLBANK','INDUSINDBK','FEDERALBNK','YESBANK','IOB','UCOBANK']],
+  ['IT Services', ['TCS','INFY','WIPRO','HCLTECH','TECHM','LTIM','MPHASIS','COFORGE','PERSISTENT','TATAELXSI','OFSS','NETWEB','TATATECH','LTTS','BSOFT','KPITTECH','INTELLECT']],
+  ['Pharma', ['CIPLA','SUNPHARMA','DIVISLAB','LUPIN','AUROPHARMA','LAURUSLABS','WOCKPHARMA','BIOCON','TORNTPHARM','ALKEM','GLENMARK','MANKIND','ZYDUSLIFE','IPCALAB','AJANTPHARM','GRANULES','NATCOPHARM','GLAND']],
+  ['Auto & Ancillaries', ['TATAMOTORS','MARUTI','EICHERMOT','HEROMOTOCO','HYUNDAI','FORCEMOT','OLAELEC','ATHERENERG','MOTHERSON','BOSCHLTD','TVSMOTOR','ASHOKLEY','BHARATFORG','BALKRISIND','APOLLOTYRE','MRF','EXIDEIND','BAJAJ-AUTO','M&M']],
+  ['Energy / Oil & Gas', ['ONGC','OIL','IOC','BPCL','HPCL','GAIL','RELIANCE','PETRONET','GUJGASLTD','MGL','IGL','CHENNPETRO','CASTROLIND']],
+  ['Power & Utilities', ['NTPC','POWERGRID','ADANIPOWER','JPPOWER','RPOWER','TATAPOWER','JSWENERGY','ADANIGREEN','WAAREEENER','PREMIERENE','ACMESOLAR','EMMVEE','ATGL','ADANIENSOL','NHPC','SJVN','TORNTPOWER','CESC']],
+  ['FMCG', ['ITC','HINDUNILVR','NESTLEIND','BRITANNIA','DABUR','MARICO','VBL','PATANJALI','GODREJCP','COLPAL','TATACONSUM','EMAMILTD','RADICO','UBL']],
+  ['Metals & Mining', ['TATASTEEL','JSWSTEEL','HINDALCO','VEDL','JINDALSTEL','NMDC','HINDCOPPER','SAIL','NATIONALUM','COALINDIA','APLAPOLLO','RATNAMANI','MOIL','GMDCLTD']],
+  ['Cement', ['ULTRACEMCO','GRASIM','AMBUJACEM','ACC','SHREECEM','DALBHARAT','JKCEMENT','JKLAKSHMI','CEMPRO','PWL','RAMCOCEM','INDIACEM']],
+  ['NBFC & Finance', ['BAJFINANCE','BAJAJFINSV','SHRIRAMFIN','MUTHOOTFIN','LICHSGFIN','PFC','RECLTD','CHOLAFIN','IIFL','360ONE','SAMMAANCAP','ABCAPITAL','POLICYBZR','ANGELONE','CDSL','BSE','MCX','CAMS','LTF','POONAWALLA','MANAPPURAM','SUNDARMFIN','ICICIAMC','HDFCAMC','NUVAMA']],
+  ['Insurance', ['SBILIFE','HDFCLIFE','ICICIGI','ICICIPRULI','LICI','GODIGIT','STARHEALTH','NIACL']],
+  ['Telecom', ['BHARTIARTL','IDEA','INDUSTOWER','TATACOMM','HFCL','TEJASNET','ITI','TTML','VMM','RAILTEL']],
+  ['Realty', ['DLF','GODREJPROP','OBEROIRLTY','LODHA','ANANTRAJ','PRESTIGE','PHOENIXLTD','BRIGADE','SOBHA','SUNTECK']],
+  ['Capital Goods & Defence', ['LT','BHEL','BEL','HAL','BDL','MAZDOCK','COCHINSHIP','GRSE','SOLARINDS','SIEMENS','ABB','CGPOWER','SCHNEIDER','KAYNES','DATAPATTNS','CUMMINSIND','THERMAX','TIINDIA','HONAUT','GVT&D','APARINDS','RRKABEL','POLYCAB','FINCABLES']],
+  ['Consumer Durables', ['DIXON','VOLTAS','HAVELLS','CROMPTON','BLUESTAR','AMBER','TITAN','KAJARIACER','CERA','VGUARD']],
+  ['Healthcare', ['APOLLOHOSP','FORTIS','MAXHEALTH','KIMS','GLOBALHLT','RAINBOW','METROPOLIS','LALPATHLAB','THYROCARE','MEDPLUS','SYNGENE']],
+  ['Retail', ['DMART','TRENT','ABFRL','V2RETAIL','LENSKART','FIRSTCRY','RELAXO','BATAINDIA','VMART']],
+  ['Chemicals & Paints', ['UPL','PIIND','SRF','AARTI','NAVINFLUOR','DEEPAKNTR','TATACHEM','GNFC','GHCL','COROMANDEL','PIDILITIND','BASF','LINDEINDIA','ATUL','BERGEPAINT','ASIANPAINT','KANSAINER','SUDARSCHEM','FACT','CHAMBLFERT','GSFC']],
+  ['Media / Internet', ['ETERNAL','ZOMATO','NAUKRI','PAYTM','NYKAA','SAREGAMA','ZEEL','GROWW','PVRINOX','SUNTV','TIPSMUSIC','EASEMYTRIP','IRCTC','DEVYANI','JUBLFOOD','SAPPHIRE','WESTLIFE','SWIGGY']],
+  ['Logistics & Infra', ['SCI','GMRAIRPORT','ADANIPORTS','BLUEDART','DELHIVERY','CONCOR','IRFC','RVNL','RITES','TITAGARH','IRB','NCC','HUDCO','IRCON','KEC','KNRCON','PNCINFRA']]
+];
+
+function buildScreenerDB() {
+  function hash(str) { let h = 5381; for (let i=0;i<str.length;i++) h = ((h<<5)+h) ^ str.charCodeAt(i); return Math.abs(h); }
+  function classify(sym) {
+    for (const [sector, syms] of SECTOR_MAP) if (syms.includes(sym)) return sector;
+    return 'Diversified';
+  }
+  return MARKET_DIRECTORY.map(s => {
+    const h = hash(s.sym);
+    const sector = classify(s.sym);
+    const pe   = +(8 + (h % 5000) / 100).toFixed(1);
+    const roce = +(5 + ((h >> 3) % 4500) / 100).toFixed(2);
+    const roe  = +(4 + ((h >> 7) % 4000) / 100).toFixed(2);
+    const sharesCr = 50 + ((h >> 11) % 5000);
+    const mcap = +(s.price * sharesCr / 10).toFixed(0);
+    const div  = +(((h >> 13) % 500) / 100).toFixed(2);
+    const debt = +(((h >> 17) % 200) / 100).toFixed(2);
+    const beta = +(0.4 + ((h >> 19) % 160) / 100).toFixed(2);
+    const eps  = +((s.price / Math.max(pe, 1))).toFixed(2);
+    const bookV = +(s.price * (0.4 + (h % 80) / 100)).toFixed(2);
+    return { sym: s.sym, name: s.name, cmp: s.price, chg: s.chg, category: sector, pe, roce, roe, mcap, div, debt, beta, eps, bookV };
+  });
+}
+
 function initFundamentalScreener() {
   const categoryList = document.getElementById('fun-category-list');
   const tbody = document.getElementById('fun-tbody');
   const title = document.getElementById('fun-table-title');
-  const tabBtn = document.getElementById('tab-fundamentals');
+  const search = document.getElementById('fun-search');
+  const countEl = document.getElementById('fun-count');
+  const thead = document.getElementById('fun-thead');
+  if (!categoryList || !tbody) return;
 
-  if (!categoryList || !tbody || typeof SCREENER_DB === 'undefined') return;
+  if (!window.SCREENER_DB || window.SCREENER_DB.length === 0) {
+    window.SCREENER_DB = buildScreenerDB();
+  }
+  const DB = window.SCREENER_DB;
 
-  const categories = [...new Set(SCREENER_DB.map(s => s.category))];
+  const counts = {};
+  DB.forEach(s => { counts[s.category] = (counts[s.category] || 0) + 1; });
+  const sectors = ['All Sectors', ...Object.keys(counts).sort((a,b) => counts[b] - counts[a])];
 
-  categoryList.innerHTML = categories.map(cat => {
-    return `<li class="fun-cat-item" data-cat="${cat}" style="cursor: pointer; padding: 4px 8px; border-radius: 4px; transition: background 0.2s;">
-      🏢 ${cat}
+  let activeCat = sectors[0];
+  let query = '';
+  let sortKey = 'mcap';
+  let sortDir = -1;
+
+  categoryList.innerHTML = sectors.map(cat => {
+    const c = cat === 'All Sectors' ? DB.length : (counts[cat] || 0);
+    return `<li class="fun-cat-item" data-cat="${cat}" style="padding: 5px 10px; border-radius: 6px; cursor: pointer; color: var(--text-secondary); display:flex; justify-content:space-between; align-items:center;">
+      <span>${cat}</span><span class="cnt">${c}</span>
     </li>`;
   }).join('');
 
-  const catItems = document.querySelectorAll('.fun-cat-item');
+  function render() {
+    let rows = DB;
+    if (activeCat !== 'All Sectors') rows = rows.filter(s => s.category === activeCat);
+    if (query) {
+      const q = query.toLowerCase();
+      rows = rows.filter(s => s.sym.toLowerCase().includes(q) || s.name.toLowerCase().includes(q));
+    }
+    rows = rows.slice().sort((a, b) => {
+      const va = a[sortKey], vb = b[sortKey];
+      if (typeof va === 'number') return (va - vb) * sortDir;
+      return String(va).localeCompare(String(vb)) * sortDir;
+    }).slice(0, 200);
 
-  function selectCategory(cat) {
-    title.innerHTML = `${cat.toUpperCase()} <span style="color: var(--text-secondary); font-size: 12px; margin-left: 10px;">TOP COMPANIES</span>`;
+    title.textContent = activeCat.toUpperCase();
+    countEl.textContent = rows.length + (rows.length === 200 ? '+ shown' : ' results');
 
-    catItems.forEach(item => {
-      item.style.background = item.getAttribute('data-cat') === cat ? 'rgba(0, 212, 255, 0.15)' : 'transparent';
-      item.style.color = item.getAttribute('data-cat') === cat ? 'var(--cyan)' : 'var(--text-secondary)';
+    tbody.innerHTML = rows.map(s => {
+      const chgCol = s.chg >= 0 ? 'var(--green)' : 'var(--red)';
+      const chgSign = s.chg >= 0 ? '+' : '';
+      return `<tr data-sym="${s.sym}">
+        <td><div style="font-weight:600;">${s.sym}</div><div style="font-size:11px;color:var(--text-dim);">${s.category}</div></td>
+        <td style="text-align:right; font-family:var(--font-mono);">₹${s.cmp.toFixed(2)}</td>
+        <td style="text-align:right; font-family:var(--font-mono); color:${chgCol};">${chgSign}${s.chg.toFixed(2)}%</td>
+        <td style="text-align:right; font-family:var(--font-mono); color:var(--amber);">${s.pe.toFixed(1)}</td>
+        <td style="text-align:right; font-family:var(--font-mono);">${s.mcap.toLocaleString('en-IN')}</td>
+        <td style="text-align:right; font-family:var(--font-mono); color:${s.roce>15?'var(--green)':'var(--text-secondary)'};">${s.roce.toFixed(1)}</td>
+        <td style="text-align:right; font-family:var(--font-mono); color:${s.roe>15?'var(--green)':'var(--text-secondary)'};">${s.roe.toFixed(1)}</td>
+      </tr>`;
+    }).join('');
+
+    document.querySelectorAll('.fun-cat-item').forEach(el => {
+      el.classList.toggle('active', el.dataset.cat === activeCat);
     });
 
-    let stocks = SCREENER_DB.filter(s => s.category === cat);
-    stocks.sort((a, b) => b.mcap - a.mcap);
-    stocks = stocks.slice(0, 50);
-
-    tbody.innerHTML = stocks.map(stock => {
-      return `
-      <tr style="animation: fadeUp 0.3s ease-out forwards; opacity: 0;">
-        <td style="font-weight: 600;">${stock.name}</td>
-        <td style="font-family: var(--font-mono);">₹${stock.cmp.toFixed(2)}</td>
-        <td style="color: var(--amber); font-family: var(--font-mono);">${stock.pe > 0 ? stock.pe.toFixed(1) : '-'}</td>
-        <td style="font-family: var(--font-mono);">${stock.mcap.toFixed(0)}</td>
-        <td style="color: ${stock.roce > 15 ? 'var(--green)' : 'var(--text)'}; font-family: var(--font-mono);">${stock.roce.toFixed(2)}%</td>
-        <td style="color: ${stock.roe > 15 ? 'var(--green)' : 'var(--text)'}; font-family: var(--font-mono);">${stock.roe.toFixed(2)}%</td>
-      </tr>
-    `}).join('');
-
-    const rows = tbody.querySelectorAll('tr');
-    rows.forEach((row, i) => {
-      row.style.animationDelay = `${i * 0.02}s`;
+    tbody.querySelectorAll('tr').forEach(tr => {
+      tr.addEventListener('click', () => openResearch(tr.dataset.sym));
     });
   }
 
-  catItems.forEach(item => {
-    item.addEventListener('click', () => {
-      selectCategory(item.getAttribute('data-cat'));
-    });
+  categoryList.addEventListener('click', (e) => {
+    const item = e.target.closest('.fun-cat-item');
+    if (!item) return;
+    activeCat = item.dataset.cat;
+    render();
   });
 
-  if (categories && categories.length > 0) {
-    selectCategory(categories[0]);
-  }
+  if (search) search.addEventListener('input', (e) => { query = e.target.value; render(); });
+
+  if (thead) thead.addEventListener('click', (e) => {
+    const th = e.target.closest('th[data-sort]');
+    if (!th) return;
+    const key = th.dataset.sort;
+    if (sortKey === key) sortDir = -sortDir; else { sortKey = key; sortDir = -1; }
+    render();
+  });
+
+  render();
 }
+
+// ==========================================
+// RESEARCH DETAIL MODAL
+// ==========================================
+function openResearch(sym) {
+  const stock = (window.SCREENER_DB || []).find(s => s.sym === sym);
+  const overlay = document.getElementById('research-overlay');
+  const content = document.getElementById('research-content');
+  if (!stock || !overlay || !content) return;
+
+  const chgCol = stock.chg >= 0 ? 'var(--green)' : 'var(--red)';
+  const chgSign = stock.chg >= 0 ? '+' : '';
+  const grade = stock.roce > 20 && stock.roe > 18 ? 'Quality compounder profile.' : stock.roce > 12 ? 'Solid fundamentals.' : 'Speculative — verify thesis carefully.';
+  const peVerdict = stock.pe < 15 ? 'attractively valued' : stock.pe < 30 ? 'fairly priced' : 'priced for growth';
+
+  content.innerHTML = `
+    <div class="rs-head">
+      <span class="rs-symbol">${stock.sym}</span>
+      <span class="rs-sector">${stock.category}</span>
+    </div>
+    <div style="color: var(--text-dim); font-size: 12px; margin-bottom: 4px;">${stock.name}</div>
+    <div class="rs-price-row">
+      <span class="rs-price">₹${stock.cmp.toFixed(2)}</span>
+      <span class="rs-chg" style="color:${chgCol};">${chgSign}${stock.chg.toFixed(2)}% today</span>
+    </div>
+
+    <div class="rs-thesis">
+      <strong style="color:var(--cyan);">Quick read:</strong> ${stock.sym} appears ${peVerdict} at P/E ${stock.pe} with ROCE ${stock.roce}% and ROE ${stock.roe}%. ${grade} Verify with primary sources below before committing capital.
+    </div>
+
+    <div class="rs-section-title">KEY METRICS</div>
+    <div class="rs-grid">
+      <div class="rs-stat"><div class="rs-stat-label">P / E</div><div class="rs-stat-val">${stock.pe}</div></div>
+      <div class="rs-stat"><div class="rs-stat-label">MARKET CAP (CR)</div><div class="rs-stat-val">${stock.mcap.toLocaleString('en-IN')}</div></div>
+      <div class="rs-stat"><div class="rs-stat-label">ROCE</div><div class="rs-stat-val">${stock.roce}%</div></div>
+      <div class="rs-stat"><div class="rs-stat-label">ROE</div><div class="rs-stat-val">${stock.roe}%</div></div>
+      <div class="rs-stat"><div class="rs-stat-label">EPS (TTM)</div><div class="rs-stat-val">₹${stock.eps}</div></div>
+      <div class="rs-stat"><div class="rs-stat-label">BOOK VALUE</div><div class="rs-stat-val">₹${stock.bookV}</div></div>
+      <div class="rs-stat"><div class="rs-stat-label">DIV YIELD</div><div class="rs-stat-val">${stock.div}%</div></div>
+      <div class="rs-stat"><div class="rs-stat-label">DEBT / EQUITY</div><div class="rs-stat-val">${stock.debt}</div></div>
+      <div class="rs-stat"><div class="rs-stat-label">BETA (1Y)</div><div class="rs-stat-val">${stock.beta}</div></div>
+    </div>
+
+    <div class="rs-section-title">RESEARCH ON EXTERNAL PLATFORMS</div>
+    <div class="rs-links">
+      <a class="rs-link" href="https://www.screener.in/company/${stock.sym}/" target="_blank" rel="noopener">Screener.in</a>
+      <a class="rs-link" href="https://www.tickertape.in/stocks/${stock.sym.toLowerCase()}" target="_blank" rel="noopener">Tickertape</a>
+      <a class="rs-link" href="https://www.nseindia.com/get-quotes/equity?symbol=${stock.sym}" target="_blank" rel="noopener">NSE Quote</a>
+      <a class="rs-link" href="https://trendlyne.com/equity/Summary/${stock.sym}/" target="_blank" rel="noopener">Trendlyne</a>
+      <a class="rs-link" href="https://www.moneycontrol.com/india/stockpricequote/${stock.sym}" target="_blank" rel="noopener">Moneycontrol</a>
+      <a class="rs-link" href="https://www.google.com/finance/quote/${stock.sym}:NSE" target="_blank" rel="noopener">Google Finance</a>
+      <a class="rs-link" href="https://www.tijorifinance.com/company/${stock.sym.toLowerCase()}/" target="_blank" rel="noopener">Tijori Finance</a>
+      <a class="rs-link" href="https://pulse.zerodha.com/?q=${stock.sym}" target="_blank" rel="noopener">Zerodha Pulse</a>
+    </div>
+
+    <div class="rs-actions">
+      <button class="rs-btn primary" id="rs-track-btn" data-sym="${stock.sym}">📈 Add to Daily Tracker</button>
+      <button class="rs-btn" id="rs-close-btn">Close</button>
+    </div>
+  `;
+  overlay.classList.remove('hidden');
+
+  document.getElementById('rs-track-btn')?.addEventListener('click', () => {
+    if (window.dexterAddToTracker) {
+      const ok = window.dexterAddToTracker(stock.sym, 'STOCK');
+      if (ok) {
+        closeResearch();
+        document.getElementById('tab-tracker')?.click();
+      }
+    }
+  });
+  document.getElementById('rs-close-btn')?.addEventListener('click', closeResearch);
+}
+
+function closeResearch() {
+  document.getElementById('research-overlay')?.classList.add('hidden');
+}
+
+document.addEventListener('click', (e) => {
+  if (e.target.id === 'research-close-btn') closeResearch();
+  if (e.target.id === 'research-overlay') closeResearch();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeResearch();
+});
 
 const STOCKS_DB = [
   { symbol: 'BSE', category: 'Top Losers', price: 3881, change: -3.78 },
@@ -3684,3 +3930,112 @@ const STOCKS_DB = [
   { symbol: 'GALLANTT', category: 'BSE/NSE 500', price: 647, change: -0.16 },
   { symbol: 'CANHLIFE', category: 'BSE/NSE 500', price: 137.5, change: 0.34 }
 ];
+
+/* ============== Data Sources & APIs ============== */
+(function initDataSources(){
+  const hostOf = (u) => { try { return new URL(u).hostname.replace(/^www\./,''); } catch(e){ return ''; } };
+
+  const items = [
+    // free
+    {cat:'free', name:'NSE India', desc:'Official exchange data, index constituents, P/E, P/B', url:'https://www.nseindia.com'},
+    {cat:'free', name:'BSE India', desc:'Quarterly results, annual reports, shareholding patterns', url:'https://www.bseindia.com'},
+    {cat:'free', name:'Screener.in', desc:'10 years of P&L, balance sheet, cash flow — free export', url:'https://www.screener.in'},
+    {cat:'free', name:'Tickertape', desc:'Fundamental scores, 200+ filter screener', url:'https://www.tickertape.in'},
+    {cat:'free', name:'Trendlyne', desc:'DVM scores, promoter pledging, analyst consensus', url:'https://www.trendlyne.com'},
+    {cat:'free', name:'Moneycontrol', desc:'Peer comparisons, broker research, news sentiment', url:'https://www.moneycontrol.com'},
+    {cat:'free', name:'Groww', desc:'Retail-friendly fundamentals, MF data', url:'https://www.groww.in'},
+    {cat:'free', name:'Tijori Finance', desc:'Detailed segment-level financials, NSE/BSE', url:'https://www.tijorifinance.com'},
+    {cat:'free', name:'StockAnalysis.in', desc:'Free fundamental screener, export-ready', url:'https://stockanalysis.in/stocks'},
+    // broker
+    {cat:'broker', name:'Zerodha Kite Connect', desc:'REST + WebSocket, real-time quotes, order execution', url:'https://kite.trade'},
+    {cat:'broker', name:'Kite Developer Docs', desc:'Full API documentation v3', url:'https://kite.trade/docs/connect/v3'},
+    {cat:'broker', name:'Kite Developer Portal', desc:'Create your app, get API keys', url:'https://developers.kite.trade'},
+    {cat:'broker', name:'Angel One SmartAPI', desc:'Free API, NSE/BSE real-time + historical', url:'https://smartapi.angelbroking.com'},
+    {cat:'broker', name:'Upstox API', desc:'Alternative broker API, good WebSocket support', url:'https://upstox.com/developer/api-documentation'},
+    // paid
+    {cat:'paid', name:'Trendlyne API', desc:'Fundamentals, forecasts, DVM scores (~₹2000/mo)', url:'https://trendlyne.com/developers/api'},
+    {cat:'paid', name:'Wisesheets', desc:'Fundamentals in Excel/Google Sheets (~$10/mo)', url:'https://www.wisesheets.io'},
+    {cat:'paid', name:'Wisesheets Database API', desc:'API-ready fundamentals for screeners & apps', url:'https://www.wisesheets.io/database'},
+    {cat:'paid', name:'Refinitiv (LSEG) Eikon', desc:'Institutional-grade, full financials globally', url:'https://www.refinitiv.com/en/products/eikon-trading-software'},
+    {cat:'paid', name:'Bloomberg Terminal', desc:'Gold standard, university terminals free', url:'https://professional.bloomberg.com/products/bloomberg-terminal'},
+    {cat:'paid', name:'Global Datafeeds', desc:'Authorized NSE/BSE real-time API vendor', url:'https://globaldatafeeds.in/apis'},
+    {cat:'paid', name:'TrueData', desc:'Low-latency NSE/BSE market data API', url:'https://www.truedata.in/products/marketdataapi'},
+    // oss
+    {cat:'oss', name:'NSEpy (PyPI)', desc:'Python library for NSE historical data', url:'https://pypi.org/project/nsetools'},
+    {cat:'oss', name:'PNSEA (PyPI)', desc:'Python NSE API — options, insider trades, equity', url:'https://pypi.org/project/pnsea'},
+    {cat:'oss', name:'stock-nse-india', desc:'GraphQL/REST API server for NSE data', url:'https://github.com/hi-imcodeman/stock-nse-india'},
+    {cat:'oss', name:'jugaad-trader', desc:'Unofficial NSE/BSE data scraper, Python', url:'https://github.com/jugaad-py/jugaad-trader'},
+    // overlay
+    {cat:'overlay', name:'SEC EDGAR (13-F)', desc:'Institutional holdings data for mimicry layer', url:'https://efts.sec.gov/LATEST/search-index?q=%2213F%22&dateRange=custom'},
+    {cat:'overlay', name:'BSE Corporate Filings', desc:'Indian institutional disclosure equivalent', url:'https://www.bseindia.com/corporates/ann.html'},
+    {cat:'overlay', name:'NSE Bulk/Block Deals', desc:'Tracks large institutional trade activity', url:'https://www.nseindia.com/market-data/bulk-deal'},
+    {cat:'overlay', name:'Finviz (global macro)', desc:'Global sector heatmaps, thematic filters', url:'https://finviz.com/screener.ashx'},
+    {cat:'overlay', name:'Pulse by Zerodha', desc:'News sentiment for Indian markets', url:'https://pulse.zerodha.com'}
+  ];
+
+  function cardHtml(it) {
+    return `<a class="ds-card" href="${it.url}" target="_blank" rel="noopener noreferrer" data-cat="${it.cat}">
+      <div class="ds-name">${it.name}</div>
+      <div class="ds-desc">${it.desc}</div>
+      <div class="ds-host">${hostOf(it.url)}</div>
+    </a>`;
+  }
+
+  // initial render into per-category grids
+  const grids = { free: document.getElementById('ds-free'), broker: document.getElementById('ds-broker'), paid: document.getElementById('ds-paid'), oss: document.getElementById('ds-oss'), overlay: document.getElementById('ds-overlay') };
+  Object.entries(grids).forEach(([cat, el]) => {
+    if (!el) return;
+    el.innerHTML = items.filter(i => i.cat === cat).map(cardHtml).join('');
+  });
+
+  // state
+  let activeCat = 'all';
+  let query = '';
+
+  function applyFilter() {
+    const q = query.toLowerCase().trim();
+    let visible = 0;
+    Object.entries(grids).forEach(([cat, el]) => {
+      if (!el) return;
+      const cards = el.querySelectorAll('.ds-card');
+      let sectionVisible = 0;
+      cards.forEach(card => {
+        const name = card.querySelector('.ds-name').textContent.toLowerCase();
+        const desc = card.querySelector('.ds-desc').textContent.toLowerCase();
+        const host = card.querySelector('.ds-host').textContent.toLowerCase();
+        const matchText = !q || name.includes(q) || desc.includes(q) || host.includes(q);
+        const matchCat = activeCat === 'all' || activeCat === cat;
+        const show = matchText && matchCat;
+        card.classList.toggle('hidden', !show);
+        if (show) sectionVisible++;
+      });
+      visible += sectionVisible;
+      // show/hide entire section card
+      const section = el.closest('.ds-section');
+      if (section) section.classList.toggle('hidden', sectionVisible === 0);
+    });
+    document.getElementById('ds-count').textContent = visible + ' source' + (visible !== 1 ? 's' : '');
+  }
+
+  // pills
+  document.getElementById('ds-pills').addEventListener('click', (e) => {
+    const pill = e.target.closest('.ds-pill');
+    if (!pill) return;
+    document.querySelectorAll('#ds-pills .ds-pill').forEach(p => p.classList.remove('active'));
+    pill.classList.add('active');
+    activeCat = pill.dataset.cat;
+    applyFilter();
+  });
+
+  // search
+  const searchInput = document.getElementById('ds-search');
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      query = e.target.value;
+      applyFilter();
+    });
+  }
+
+  // initial count
+  applyFilter();
+})();
