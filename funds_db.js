@@ -70,76 +70,6 @@ const TOP_FUNDS_DB = [
     "return3y": 15.85
   },
   {
-    "name": "Tata Mid-Cap Fund Dir Gr",
-    "category": "Mid-Cap",
-    "rating": 4,
-    "nav": 99.5,
-    "return3y": 27.72
-  },
-  {
-    "name": "Motilal Oswal Mid-Cap Fund Dir Gr",
-    "category": "Mid-Cap",
-    "rating": 3,
-    "nav": 191.88,
-    "return3y": 25.63
-  },
-  {
-    "name": "Mirae Asset Mid-Cap Fund Dir Gr",
-    "category": "Mid-Cap",
-    "rating": 4,
-    "nav": 93.73,
-    "return3y": 25.16
-  },
-  {
-    "name": "HDFC Mid-Cap Fund Dir Gr",
-    "category": "Mid-Cap",
-    "rating": 5,
-    "nav": 267.82,
-    "return3y": 24.74
-  },
-  {
-    "name": "Axis Mid-Cap Fund Dir Gr",
-    "category": "Mid-Cap",
-    "rating": 4,
-    "nav": 176.22,
-    "return3y": 23.75
-  },
-  {
-    "name": "Aditya Birla Mid-Cap Fund Dir Gr",
-    "category": "Mid-Cap",
-    "rating": 5,
-    "nav": 296.94,
-    "return3y": 23.01
-  },
-  {
-    "name": "SBI Mid-Cap Fund Dir Gr",
-    "category": "Mid-Cap",
-    "rating": 5,
-    "nav": 187.63,
-    "return3y": 22.16
-  },
-  {
-    "name": "UTI Mid-Cap Fund Dir Gr",
-    "category": "Mid-Cap",
-    "rating": 4,
-    "nav": 294.29,
-    "return3y": 17.72
-  },
-  {
-    "name": "Nippon India Mid-Cap Fund Dir Gr",
-    "category": "Mid-Cap",
-    "rating": 5,
-    "nav": 199.09,
-    "return3y": 16.83
-  },
-  {
-    "name": "Kotak Mid-Cap Fund Dir Gr",
-    "category": "Mid-Cap",
-    "rating": 4,
-    "nav": 127.89,
-    "return3y": 15.35
-  },
-  {
     "name": "UTI Small-Cap Fund Dir Gr",
     "category": "Small-Cap",
     "rating": 4,
@@ -2098,5 +2028,551 @@ const TOP_FUNDS_DB = [
     "rating": 5,
     "nav": 66.72,
     "return3y": 10.2
+  },
+  {
+    "name": "ABSL Mid Cap Dir",
+    "category": "Mid-Cap",
+    "rating": 3,
+    "nav": 902.42,
+    "return3y": 19.15
+  },
+  {
+    "name": "ABSL Nifty Midcap 150 Index Dir",
+    "category": "Mid-Cap",
+    "rating": 3,
+    "nav": 25.143,
+    "return3y": 20.77
+  },
+  {
+    "name": "Axis Midcap Dir",
+    "category": "Mid-Cap",
+    "rating": 2,
+    "nav": 135.45,
+    "return3y": 18.33
+  },
+  {
+    "name": "Axis Nifty Midcap 50 Index Dir",
+    "category": "Mid-Cap",
+    "rating": 3,
+    "nav": 20.898,
+    "return3y": 21.36
+  },
+  {
+    "name": "Bandhan Midcap Dir",
+    "category": "Mid-Cap",
+    "rating": 3,
+    "nav": 19.031,
+    "return3y": 20.6
+  },
+  {
+    "name": "Bandhan Nifty Midcap 150 Index Dir",
+    "category": "Mid-Cap",
+    "rating": 3,
+    "nav": 10.124,
+    "return3y": null
+  },
+  {
+    "name": "Bank of India Mid Cap Dir",
+    "category": "Mid-Cap",
+    "rating": 3,
+    "nav": 10.05,
+    "return3y": null
+  },
+  {
+    "name": "Baroda BNP Paribas Midcap Dir",
+    "category": "Mid-Cap",
+    "rating": 4,
+    "nav": 129.229,
+    "return3y": 21.4
+  },
+  {
+    "name": "Baroda BNP Paribas Nifty Midcap 150 Index Dir",
+    "category": "Mid-Cap",
+    "rating": 3,
+    "nav": 10.714,
+    "return3y": null
+  },
+  {
+    "name": "Canara Robeco Mid Cap Dir",
+    "category": "Mid-Cap",
+    "rating": 3,
+    "nav": 18.17,
+    "return3y": 19.66
+  },
+  {
+    "name": "DSP Midcap Dir",
+    "category": "Mid-Cap",
+    "rating": 2,
+    "nav": 166.092,
+    "return3y": 18.86
+  },
+  {
+    "name": "DSP Nifty Midcap 150 ETF",
+    "category": "Mid-Cap",
+    "rating": 3,
+    "nav": 22.27,
+    "return3y": null
+  },
+  {
+    "name": "DSP Nifty Midcap 150 Index Dir",
+    "category": "Mid-Cap",
+    "rating": 3,
+    "nav": 10.154,
+    "return3y": null
+  },
+  {
+    "name": "DSP Nifty Midcap 150 Quality 50 ETF",
+    "category": "Mid-Cap",
+    "rating": 3,
+    "nav": 243.351,
+    "return3y": 12.3
+  },
+  {
+    "name": "DSP Nifty Midcap 150 Quality 50 Index Dir",
+    "category": "Mid-Cap",
+    "rating": 1,
+    "nav": 14.465,
+    "return3y": 12.3
+  },
+  {
+    "name": "Edelweiss Mid Cap Dir",
+    "category": "Mid-Cap",
+    "rating": 5,
+    "nav": 123.018,
+    "return3y": 24.37
+  },
+  {
+    "name": "Edelweiss Nifty Midcap150 Momentum 50 Index Dir",
+    "category": "Mid-Cap",
+    "rating": 2,
+    "nav": 18.342,
+    "return3y": 20.82
+  },
+  {
+    "name": "Franklin India Mid Cap Dir",
+    "category": "Mid-Cap",
+    "rating": 3,
+    "nav": 3013.786,
+    "return3y": 18.64
+  },
+  {
+    "name": "Groww Nifty Midcap 150 ETF",
+    "category": "Mid-Cap",
+    "rating": 3,
+    "nav": 222.849,
+    "return3y": null
+  },
+  {
+    "name": "Groww Nifty Midcap 150 Index Dir",
+    "category": "Mid-Cap",
+    "rating": 3,
+    "nav": 9.962,
+    "return3y": null
+  },
+  {
+    "name": "HDFC Mid Cap Dir",
+    "category": "Mid-Cap",
+    "rating": 5,
+    "nav": 220.327,
+    "return3y": 22.01
+  },
+  {
+    "name": "HDFC NIFTY Midcap 150 ETF",
+    "category": "Mid-Cap",
+    "rating": 3,
+    "nav": 22.502,
+    "return3y": 20.86
+  },
+  {
+    "name": "HDFC NIFTY Midcap 150 Index Dir",
+    "category": "Mid-Cap",
+    "rating": 3,
+    "nav": 18.987,
+    "return3y": 20.42
+  },
+  {
+    "name": "Helios Mid Cap Dir",
+    "category": "Mid-Cap",
+    "rating": 3,
+    "nav": 13.06,
+    "return3y": null
+  },
+  {
+    "name": "HSBC Midcap Dir",
+    "category": "Mid-Cap",
+    "rating": 4,
+    "nav": 505.542,
+    "return3y": 27.8
+  },
+  {
+    "name": "ICICI Pru BSE Midcap Select ETF",
+    "category": "Mid-Cap",
+    "rating": 3,
+    "nav": 18.302,
+    "return3y": 19.82
+  },
+  {
+    "name": "ICICI Pru Midcap Dir",
+    "category": "Mid-Cap",
+    "rating": 4,
+    "nav": 374.63,
+    "return3y": 25.76
+  },
+  {
+    "name": "ICICI Pru Nifty Midcap 150 ETF",
+    "category": "Mid-Cap",
+    "rating": 3,
+    "nav": 22.99,
+    "return3y": 20.97
+  },
+  {
+    "name": "ICICI Pru Nifty Midcap 150 Index Dir",
+    "category": "Mid-Cap",
+    "rating": 3,
+    "nav": 19.884,
+    "return3y": 20.57
+  },
+  {
+    "name": "Invesco India Mid cap Dir",
+    "category": "Mid-Cap",
+    "rating": 4,
+    "nav": 222.51,
+    "return3y": 25.61
+  },
+  {
+    "name": "ITI Mid Cap Dir",
+    "category": "Mid-Cap",
+    "rating": 4,
+    "nav": 24.376,
+    "return3y": 24.07
+  },
+  {
+    "name": "JioBlackRock Nifty Midcap 150 Index Dir",
+    "category": "Mid-Cap",
+    "rating": 3,
+    "nav": 10.474,
+    "return3y": null
+  },
+  {
+    "name": "JM Midcap Dir",
+    "category": "Mid-Cap",
+    "rating": 4,
+    "nav": 21.186,
+    "return3y": 24.14
+  },
+  {
+    "name": "Kotak Midcap Dir",
+    "category": "Mid-Cap",
+    "rating": 3,
+    "nav": 162.614,
+    "return3y": 21.18
+  },
+  {
+    "name": "Kotak Nifty Midcap 150 ETF",
+    "category": "Mid-Cap",
+    "rating": 3,
+    "nav": 22.58,
+    "return3y": null
+  },
+  {
+    "name": "Kotak Nifty Midcap 150 Index Dir",
+    "category": "Mid-Cap",
+    "rating": 3,
+    "nav": 11.426,
+    "return3y": null
+  },
+  {
+    "name": "Kotak Nifty Midcap 150 Momentum 50 Index Dir",
+    "category": "Mid-Cap",
+    "rating": 3,
+    "nav": 9.412,
+    "return3y": null
+  },
+  {
+    "name": "Kotak Nifty Midcap 50 ETF",
+    "category": "Mid-Cap",
+    "rating": 3,
+    "nav": 17.549,
+    "return3y": 21.83
+  },
+  {
+    "name": "Kotak Nifty Midcap 50 Index Dir",
+    "category": "Mid-Cap",
+    "rating": 3,
+    "nav": 10.569,
+    "return3y": null
+  },
+  {
+    "name": "LIC MF Midcap Dir",
+    "category": "Mid-Cap",
+    "rating": 2,
+    "nav": 33.066,
+    "return3y": 19.33
+  },
+  {
+    "name": "LIC MF Nifty Midcap 100 ETF",
+    "category": "Mid-Cap",
+    "rating": 3,
+    "nav": 61.08,
+    "return3y": null
+  },
+  {
+    "name": "Mahindra Manulife Mid Cap Dir",
+    "category": "Mid-Cap",
+    "rating": 4,
+    "nav": 40.374,
+    "return3y": 24.23
+  },
+  {
+    "name": "Mirae Asset Midcap Dir",
+    "category": "Mid-Cap",
+    "rating": 3,
+    "nav": 40.966,
+    "return3y": 20.19
+  },
+  {
+    "name": "Mirae Asset Nifty Midcap 150 ETF",
+    "category": "Mid-Cap",
+    "rating": 3,
+    "nav": 22.71,
+    "return3y": 21.04
+  },
+  {
+    "name": "Mirae Asset Nifty MidSmallcap400 Momentum Quality 100 ETF",
+    "category": "Mid-Cap",
+    "rating": 3,
+    "nav": 50.034,
+    "return3y": null
+  },
+  {
+    "name": "Mirae Asset Nifty MidSmallcap400 Mom Qlty 100 ETF FoF Dir",
+    "category": "Mid-Cap",
+    "rating": 3,
+    "nav": 10.103,
+    "return3y": null
+  },
+  {
+    "name": "Motilal Oswal BSE Midcap 150 Momentum 30 Index Dir",
+    "category": "Mid-Cap",
+    "rating": 3,
+    "nav": null,
+    "return3y": null
+  },
+  {
+    "name": "Motilal Oswal Midcap Dir",
+    "category": "Mid-Cap",
+    "rating": 3,
+    "nav": 105.113,
+    "return3y": 18.35
+  },
+  {
+    "name": "Motilal Oswal Nifty Midcap 100 ETF",
+    "category": "Mid-Cap",
+    "rating": 3,
+    "nav": 65.47,
+    "return3y": 21.98
+  },
+  {
+    "name": "Motilal Oswal Nifty Midcap 150 Dir",
+    "category": "Mid-Cap",
+    "rating": 3,
+    "nav": 40.319,
+    "return3y": 20.91
+  },
+  {
+    "name": "Motilal Oswal Nifty Midcap150 Momentum 50 ETF",
+    "category": "Mid-Cap",
+    "rating": 3,
+    "nav": 63.098,
+    "return3y": null
+  },
+  {
+    "name": "Navi Nifty Midcap 150 Index Dir",
+    "category": "Mid-Cap",
+    "rating": 3,
+    "nav": 21.053,
+    "return3y": 20.55
+  },
+  {
+    "name": "Navi Nifty MidSmallcap 400 Index Dir",
+    "category": "Mid-Cap",
+    "rating": 3,
+    "nav": 10.307,
+    "return3y": null
+  },
+  {
+    "name": "Nippon India ETF Nifty Midcap 150",
+    "category": "Mid-Cap",
+    "rating": 3,
+    "nav": 229.695,
+    "return3y": 20.87
+  },
+  {
+    "name": "Nippon India Growth Mid Cap Dir",
+    "category": "Mid-Cap",
+    "rating": 5,
+    "nav": 4777.157,
+    "return3y": 23.61
+  },
+  {
+    "name": "Nippon India Nifty Midcap150 Dir",
+    "category": "Mid-Cap",
+    "rating": 3,
+    "nav": 25.742,
+    "return3y": 20.66
+  },
+  {
+    "name": "PGIM India Midcap Dir",
+    "category": "Mid-Cap",
+    "rating": 2,
+    "nav": 73.41,
+    "return3y": 12.99
+  },
+  {
+    "name": "Quant Mid Cap Dir",
+    "category": "Mid-Cap",
+    "rating": 2,
+    "nav": 246.088,
+    "return3y": 17.96
+  },
+  {
+    "name": "Samco Mid Cap Dir",
+    "category": "Mid-Cap",
+    "rating": 3,
+    "nav": 9.89,
+    "return3y": null
+  },
+  {
+    "name": "SBI Midcap Dir",
+    "category": "Mid-Cap",
+    "rating": 3,
+    "nav": 262.151,
+    "return3y": 13.97
+  },
+  {
+    "name": "SBI Nifty Midcap 150 ETF",
+    "category": "Mid-Cap",
+    "rating": 3,
+    "nav": 22.27,
+    "return3y": null
+  },
+  {
+    "name": "SBI Nifty Midcap 150 Index Dir",
+    "category": "Mid-Cap",
+    "rating": 3,
+    "nav": 19.369,
+    "return3y": 20.63
+  },
+  {
+    "name": "SBI Nifty Midcap 150 Momentum 50 ETF",
+    "category": "Mid-Cap",
+    "rating": 3,
+    "nav": 62.228,
+    "return3y": null
+  },
+  {
+    "name": "Sundaram Midcap Dir",
+    "category": "Mid-Cap",
+    "rating": 4,
+    "nav": 1568.943,
+    "return3y": 23.06
+  },
+  {
+    "name": "Tata Mid Cap Dir",
+    "category": "Mid-Cap",
+    "rating": 3,
+    "nav": 506.393,
+    "return3y": 19.13
+  },
+  {
+    "name": "Tata Nifty Midcap 150 Index Dir",
+    "category": "Mid-Cap",
+    "rating": 3,
+    "nav": 10.578,
+    "return3y": null
+  },
+  {
+    "name": "Tata Nifty Midcap 150 Momentum 50 Index Dir",
+    "category": "Mid-Cap",
+    "rating": 2,
+    "nav": 18.317,
+    "return3y": 20.44
+  },
+  {
+    "name": "Taurus Mid Cap Dir",
+    "category": "Mid-Cap",
+    "rating": 1,
+    "nav": 122.9,
+    "return3y": 12.26
+  },
+  {
+    "name": "TRUSTMF Mid Cap Dir",
+    "category": "Mid-Cap",
+    "rating": 3,
+    "nav": 11.16,
+    "return3y": null
+  },
+  {
+    "name": "Union Midcap Dir",
+    "category": "Mid-Cap",
+    "rating": 3,
+    "nav": 53.82,
+    "return3y": 19.91
+  },
+  {
+    "name": "UTI Midcap Dir",
+    "category": "Mid-Cap",
+    "rating": 1,
+    "nav": 333.328,
+    "return3y": 15.14
+  },
+  {
+    "name": "UTI Nifty Midcap 150 ETF",
+    "category": "Mid-Cap",
+    "rating": 3,
+    "nav": 224.526,
+    "return3y": null
+  },
+  {
+    "name": "UTI Nifty Midcap 150 Index Dir",
+    "category": "Mid-Cap",
+    "rating": 3,
+    "nav": 10.666,
+    "return3y": null
+  },
+  {
+    "name": "UTI Nifty Midcap 150 Quality 50 Index Dir",
+    "category": "Mid-Cap",
+    "rating": 1,
+    "nav": 14.024,
+    "return3y": 12.12
+  },
+  {
+    "name": "UTI Nifty Midsmallcap 400 Momentum Quality 100 Index Dir",
+    "category": "Mid-Cap",
+    "rating": 3,
+    "nav": 11.421,
+    "return3y": null
+  },
+  {
+    "name": "WhiteOak Capital Mid Cap Fund Dir",
+    "category": "Mid-Cap",
+    "rating": 5,
+    "nav": 21.867,
+    "return3y": 25.54
+  },
+  {
+    "name": "Zerodha Nifty Midcap 150 ETF",
+    "category": "Mid-Cap",
+    "rating": 3,
+    "nav": 11.165,
+    "return3y": null
+  },
+  {
+    "name": "Zerodha Nifty MidSmallcap400 50:50 Index Dir",
+    "category": "Mid-Cap",
+    "rating": 3,
+    "nav": 10.787,
+    "return3y": null
   }
 ];

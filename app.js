@@ -1,3 +1,5 @@
+window.STOCKS_DB = window.STOCKS_DB || [];
+window.TOP_FUNDS_DB = window.TOP_FUNDS_DB || [];
 /* ============================================================
    DEXTER — Bio-Algorithmic Trading Engine
    Core Application Logic
@@ -2689,6 +2691,8 @@ function boot() {
   initDematTabHandlers();
   initTrackerModule();
   initTopFundsExplorer();
+  initEquityScreener();
+  initFundamentalScreener();
 
   // Seed fallback indices
   State.lastActualPrices['NIFTY'] = State.indicesPrices.NIFTY.price;
@@ -2823,7 +2827,13 @@ document.getElementById('tab-forecasting')?.addEventListener('click', () => {
 // ==========================================
 function initTrackerModule() {
   const STORAGE_KEY = 'dexter_daily_tracker';
-  let trackerData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+  let trackerData = [];
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) trackerData = JSON.parse(raw);
+  } catch (e) {
+    console.warn("localStorage corrupted, resetting tracker.");
+  }
 
   const addBtn = document.getElementById('tracker-add-btn');
   const snapshotBtn = document.getElementById('tracker-snapshot-btn');
@@ -2841,20 +2851,20 @@ function initTrackerModule() {
       const prevPrice = history.length > 1 ? history[history.length - 2].price : currentPrice;
       const change = currentPrice - prevPrice;
       const pctChange = currentPrice > 0 ? (change / prevPrice) * 100 : 0;
-      
+
       const tr = document.createElement('tr');
-      
+
       const minP = Math.min(...history.map(h => h.price), currentPrice * 0.9);
       const maxP = Math.max(...history.map(h => h.price), currentPrice * 1.1);
       const range = maxP - minP || 1;
       const stepX = 100 / Math.max(1, history.length - 1);
-      
+
       let pathD = history.map((h, i) => {
         const x = i * stepX;
         const y = 30 - ((h.price - minP) / range) * 30;
         return (i === 0 ? 'M' : 'L') + x + ',' + y;
       }).join(' ');
-      
+
       const sparklineColor = change >= 0 ? '#00D4FF' : '#FF6B35';
 
       tr.innerHTML = `
@@ -2887,7 +2897,11 @@ function initTrackerModule() {
   }
 
   function saveData() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(trackerData));
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(trackerData));
+    } catch (e) {
+      console.warn("localStorage quota exceeded.");
+    }
   }
 
   addBtn.addEventListener('click', () => {
@@ -2919,17 +2933,17 @@ function initTrackerModule() {
     trackerData.forEach(asset => {
       const history = asset.history;
       const lastPrice = history.length > 0 ? history[history.length - 1].price : 100;
-      const drift = asset.type === 'MF' ? 0.0005 : 0.001; 
-      const volatility = asset.type === 'MF' ? 0.01 : 0.02; 
-      
+      const drift = asset.type === 'MF' ? 0.0005 : 0.001;
+      const volatility = asset.type === 'MF' ? 0.01 : 0.02;
+
       const randomReturn = (Math.random() - 0.5) * volatility + drift;
       const newPrice = lastPrice * (1 + randomReturn);
-      
+
       history.push({
         date: new Date().toISOString(),
         price: newPrice
       });
-      
+
       if (history.length > 30) {
         asset.history = history.slice(-30);
       }
@@ -2937,7 +2951,7 @@ function initTrackerModule() {
 
     saveData();
     renderTracker();
-    
+
     snapshotBtn.style.backgroundColor = '#00D4FF';
     setTimeout(() => { snapshotBtn.style.backgroundColor = 'var(--amber)'; }, 300);
   });
@@ -2973,7 +2987,7 @@ function initTopFundsExplorer() {
   function selectCategory(cat) {
     // Update Title
     title.innerHTML = `${cat.toUpperCase()} <span style="color: var(--text-secondary); font-size: 12px; margin-left: 10px;">TOP 10 FUNDS</span>`;
-    
+
     // Highlight sidebar
     catItems.forEach(item => {
       item.style.background = item.getAttribute('data-cat') === cat ? 'rgba(0, 212, 255, 0.15)' : 'transparent';
@@ -2993,7 +3007,7 @@ function initTopFundsExplorer() {
         <td class="positive" style="font-family: var(--font-mono); font-weight: bold;">+${mf.return3y.toFixed(2)}%</td>
       </tr>
     `).join('');
-    
+
     // Stagger animation
     const rows = tbody.querySelectorAll('tr');
     rows.forEach((row, i) => {
@@ -3022,4 +3036,651 @@ function initTopFundsExplorer() {
 // Call init at bottom
 document.addEventListener('DOMContentLoaded', () => {
   initTopFundsExplorer();
+  initEquityScreener();
+  initFundamentalScreener();
 });
+
+
+// ==========================================
+// EQUITY SCREENER
+// ==========================================
+function initEquityScreener() {
+  const categoryList = document.getElementById('eq-category-list');
+  const tbody = document.getElementById('eq-tbody');
+  const title = document.getElementById('eq-table-title');
+  const tabBtn = document.getElementById('tab-equity');
+
+  if (!categoryList || !tbody || typeof STOCKS_DB === 'undefined') return;
+
+  // Extract unique categories from DB
+  const categories = [...new Set(STOCKS_DB.map(s => s.category))];
+
+  // Render Sidebar
+  categoryList.innerHTML = categories.map(cat => {
+    let icon = '📈';
+    if (cat === 'NIFTY 50') icon = '🏛️';
+    if (cat === 'Top Gainers') icon = '🚀';
+    if (cat === 'Top Losers') icon = '🩸';
+    return `<li class="eq-cat-item" data-cat="${cat}" style="cursor: pointer; padding: 4px 8px; border-radius: 4px; transition: background 0.2s;">
+      ${icon} ${cat}
+    </li>`;
+  }).join('');
+
+  const catItems = document.querySelectorAll('.eq-cat-item');
+
+  function selectCategory(cat) {
+    // Update Title
+    title.innerHTML = `${cat.toUpperCase()} <span style="color: var(--text-secondary); font-size: 12px; margin-left: 10px;">TOP STOCKS</span>`;
+
+    // Highlight sidebar
+    catItems.forEach(item => {
+      item.style.background = item.getAttribute('data-cat') === cat ? 'rgba(0, 212, 255, 0.15)' : 'transparent';
+      item.style.color = item.getAttribute('data-cat') === cat ? 'var(--cyan)' : 'var(--text-secondary)';
+    });
+
+    // Render Table
+    let stocks = STOCKS_DB.filter(s => s.category === cat);
+    if (cat === 'Top Gainers') {
+      stocks.sort((a, b) => b.change - a.change);
+    } else if (cat === 'Top Losers') {
+      stocks.sort((a, b) => a.change - b.change);
+    }
+
+    // Limit to top 50 for performance if large
+    stocks = stocks.slice(0, 50);
+
+    tbody.innerHTML = stocks.map(stock => {
+      const color = stock.change >= 0 ? 'var(--green)' : 'var(--red)';
+      const sign = stock.change >= 0 ? '+' : '';
+      return `
+      <tr style="animation: fadeUp 0.3s ease-out forwards; opacity: 0;">
+        <td style="font-weight: 600;">${stock.symbol}</td>
+        <td style="font-family: var(--font-mono);">₹${stock.price.toFixed(2)}</td>
+        <td style="color: ${color}; font-family: var(--font-mono); font-weight: bold;">${sign}${stock.change.toFixed(2)}%</td>
+      </tr>
+    `}).join('');
+
+    // Stagger animation
+    const rows = tbody.querySelectorAll('tr');
+    rows.forEach((row, i) => {
+      row.style.animationDelay = `${i * 0.02}s`;
+    });
+  }
+
+  // Click listeners
+  catItems.forEach(item => {
+    item.addEventListener('click', () => {
+      selectCategory(item.getAttribute('data-cat'));
+    });
+  });
+
+  // Auto-load first category immediately
+  if (categories.length > 0) {
+    selectCategory(categories[0]);
+  }
+}
+
+// ==========================================
+// FUNDAMENTAL SCREENER
+// ==========================================
+function initFundamentalScreener() {
+  const categoryList = document.getElementById('fun-category-list');
+  const tbody = document.getElementById('fun-tbody');
+  const title = document.getElementById('fun-table-title');
+  const tabBtn = document.getElementById('tab-fundamentals');
+
+  if (!categoryList || !tbody || typeof SCREENER_DB === 'undefined') return;
+
+  const categories = [...new Set(SCREENER_DB.map(s => s.category))];
+
+  categoryList.innerHTML = categories.map(cat => {
+    return `<li class="fun-cat-item" data-cat="${cat}" style="cursor: pointer; padding: 4px 8px; border-radius: 4px; transition: background 0.2s;">
+      🏢 ${cat}
+    </li>`;
+  }).join('');
+
+  const catItems = document.querySelectorAll('.fun-cat-item');
+
+  function selectCategory(cat) {
+    title.innerHTML = `${cat.toUpperCase()} <span style="color: var(--text-secondary); font-size: 12px; margin-left: 10px;">TOP COMPANIES</span>`;
+
+    catItems.forEach(item => {
+      item.style.background = item.getAttribute('data-cat') === cat ? 'rgba(0, 212, 255, 0.15)' : 'transparent';
+      item.style.color = item.getAttribute('data-cat') === cat ? 'var(--cyan)' : 'var(--text-secondary)';
+    });
+
+    let stocks = SCREENER_DB.filter(s => s.category === cat);
+    stocks.sort((a, b) => b.mcap - a.mcap);
+    stocks = stocks.slice(0, 50);
+
+    tbody.innerHTML = stocks.map(stock => {
+      return `
+      <tr style="animation: fadeUp 0.3s ease-out forwards; opacity: 0;">
+        <td style="font-weight: 600;">${stock.name}</td>
+        <td style="font-family: var(--font-mono);">₹${stock.cmp.toFixed(2)}</td>
+        <td style="color: var(--amber); font-family: var(--font-mono);">${stock.pe > 0 ? stock.pe.toFixed(1) : '-'}</td>
+        <td style="font-family: var(--font-mono);">${stock.mcap.toFixed(0)}</td>
+        <td style="color: ${stock.roce > 15 ? 'var(--green)' : 'var(--text)'}; font-family: var(--font-mono);">${stock.roce.toFixed(2)}%</td>
+        <td style="color: ${stock.roe > 15 ? 'var(--green)' : 'var(--text)'}; font-family: var(--font-mono);">${stock.roe.toFixed(2)}%</td>
+      </tr>
+    `}).join('');
+
+    const rows = tbody.querySelectorAll('tr');
+    rows.forEach((row, i) => {
+      row.style.animationDelay = `${i * 0.02}s`;
+    });
+  }
+
+  catItems.forEach(item => {
+    item.addEventListener('click', () => {
+      selectCategory(item.getAttribute('data-cat'));
+    });
+  });
+
+  if (categories && categories.length > 0) {
+    selectCategory(categories[0]);
+  }
+}
+
+const STOCKS_DB = [
+  { symbol: 'BSE', category: 'Top Losers', price: 3881, change: -3.78 },
+  { symbol: 'ZEEL', category: 'Top Gainers', price: 112.39, change: 7.63 },
+  { symbol: 'RELIANCE', category: 'NIFTY 50', price: 1291.4, change: -0.49 },
+  { symbol: 'SBIN', category: 'NIFTY 50', price: 977, change: -0.23 },
+  { symbol: 'ADANIENT', category: 'NIFTY 50', price: 3043, change: 2.36 },
+  { symbol: 'HDFCBANK', category: 'NIFTY 50', price: 748.2, change: -0.8 },
+  { symbol: 'HSCL', category: 'Top Gainers', price: 688, change: 7.17 },
+  { symbol: 'ADANIGREEN', category: 'Top Gainers', price: 1522, change: 6.93 },
+  { symbol: 'GROWW', category: 'Top Gainers', price: 196.25, change: 3.2 },
+  { symbol: 'MCX', category: 'Top Losers', price: 2789.8, change: -3.58 },
+  { symbol: 'ICICIBANK', category: 'NIFTY 50', price: 1261, change: 0.74 },
+  { symbol: 'BAJFINANCE', category: 'NIFTY 50', price: 889.55, change: 1.73 },
+  { symbol: 'TCS', category: 'NIFTY 50', price: 2196, change: -2.01 },
+  { symbol: 'INFY', category: 'NIFTY 50', price: 1199, change: -0.19 },
+  { symbol: 'IDEA', category: 'NIFTY 50', price: 14.96, change: 0.2 },
+  { symbol: 'OLAELEC', category: 'Top Gainers', price: 45, change: 3.88 },
+  { symbol: 'AXISBANK', category: 'NIFTY 50', price: 1273.3, change: 1.6 },
+  { symbol: 'NETWEB', category: 'Top Losers', price: 4670, change: -5.35 },
+  { symbol: 'ETERNAL', category: 'NIFTY 50', price: 256.75, change: 0.94 },
+  { symbol: 'ADANIENSOL', category: 'Top Gainers', price: 1578.8, change: 3.87 },
+  { symbol: 'WIPRO', category: 'Top Losers', price: 198.05, change: -3.07 },
+  { symbol: 'TEJASNET', category: 'Top Losers', price: 579.1, change: -3.8 },
+  { symbol: 'HFCL', category: 'Top Losers', price: 187.23, change: -5 },
+  { symbol: 'ATGL', category: 'NIFTY 50', price: 761.6, change: 2.36 },
+  { symbol: 'TATASTEEL', category: 'NIFTY 50', price: 206.8, change: -1.79 },
+  { symbol: 'ADANIPOWER', category: 'NIFTY 50', price: 232.7, change: 1.16 },
+  { symbol: 'BHARTIARTL', category: 'NIFTY 50', price: 1798, change: -1.15 },
+  { symbol: 'SCI', category: 'NIFTY 50', price: 302.65, change: -0.53 },
+  { symbol: 'BHEL', category: 'NIFTY 50', price: 386.55, change: -0.68 },
+  { symbol: 'POLICYBZR', category: 'NIFTY 50', price: 1540, change: 0.24 },
+  { symbol: 'VEDL', category: 'Top Losers', price: 317.05, change: -3.19 },
+  { symbol: 'WOCKPHARMA', category: 'Top Losers', price: 1924.2, change: -7.17 },
+  { symbol: 'CANBK', category: 'NIFTY 50', price: 136.4, change: 2.46 },
+  { symbol: 'BANKBARODA', category: 'NIFTY 50', price: 264, change: 0.46 },
+  { symbol: 'HINDZINC', category: 'Top Losers', price: 568.8, change: -5.8 },
+  { symbol: 'TITAN', category: 'NIFTY 50', price: 4268, change: 0.87 },
+  { symbol: 'PINELABS', category: 'NIFTY 50', price: 144.29, change: 1.44 },
+  { symbol: 'MEESHO', category: 'NIFTY 50', price: 165.8, change: 0.28 },
+  { symbol: 'NATIONALUM', category: 'Top Losers', price: 395.6, change: -4.44 },
+  { symbol: 'IFCI', category: 'Top Losers', price: 79.61, change: -2.89 },
+  { symbol: 'SHRIRAMFIN', category: 'NIFTY 50', price: 922.6, change: 0.74 },
+  { symbol: 'M&M', category: 'NIFTY 50', price: 3039, change: 0.76 },
+  { symbol: 'LT', category: 'NIFTY 50', price: 3962.1, change: 0.51 },
+  { symbol: 'HINDALCO', category: 'Top Losers', price: 1092, change: -2.99 },
+  { symbol: 'DATAPATTNS', category: 'NIFTY 50', price: 4215, change: 0.54 },
+  { symbol: 'JYOTICNC', category: 'Top Gainers', price: 635.4, change: 6.25 },
+  { symbol: 'SAMMAANCAP', category: 'NIFTY 50', price: 184.2, change: 0.59 },
+  { symbol: 'GODIGIT', category: 'NIFTY 50', price: 306.95, change: 1.37 },
+  { symbol: 'PFC', category: 'NIFTY 50', price: 431.5, change: 1.66 },
+  { symbol: 'ULTRACEMCO', category: 'NIFTY 50', price: 10919, change: -0.71 },
+  { symbol: 'COALINDIA', category: 'BSE/NSE 500', price: 472.05, change: -1.99 },
+  { symbol: 'BEL', category: 'BSE/NSE 500', price: 408, change: -0.46 },
+  { symbol: 'ITC', category: 'BSE/NSE 500', price: 280.95, change: 0.23 },
+  { symbol: 'GVT&D', category: 'BSE/NSE 500', price: 5026, change: -1.19 },
+  { symbol: 'SUNPHARMA', category: 'BSE/NSE 500', price: 1783.1, change: 0.17 },
+  { symbol: 'ANGELONE', category: 'BSE/NSE 500', price: 333.35, change: -1.29 },
+  { symbol: 'ATHERENERG', category: 'Top Gainers', price: 1039, change: 5.15 },
+  { symbol: 'DIXON', category: 'BSE/NSE 500', price: 11450, change: -0.33 },
+  { symbol: 'CGPOWER', category: 'BSE/NSE 500', price: 938.15, change: 0.03 },
+  { symbol: 'ASIANPAINT', category: 'BSE/NSE 500', price: 2677, change: 0.58 },
+  { symbol: 'NHPC', category: 'BSE/NSE 500', price: 74.9, change: -1.6 },
+  { symbol: 'SUZLON', category: 'BSE/NSE 500', price: 55.23, change: -0.7 },
+  { symbol: 'POWERINDIA', category: 'BSE/NSE 500', price: 36765, change: 0.66 },
+  { symbol: 'MARUTI', category: 'BSE/NSE 500', price: 13035, change: -0.22 },
+  { symbol: 'SAIL', category: 'Top Losers', price: 190.38, change: -3.51 },
+  { symbol: 'HINDUNILVR', category: 'BSE/NSE 500', price: 2121.2, change: 2.01 },
+  { symbol: 'KOTAKBANK', category: 'BSE/NSE 500', price: 376.95, change: -1.19 },
+  { symbol: 'TMPV', category: 'BSE/NSE 500', price: 397.45, change: -0.56 },
+  { symbol: 'NMDC', category: 'Top Losers', price: 92.5, change: -2.32 },
+  { symbol: 'RECLTD', category: 'BSE/NSE 500', price: 343.3, change: 2.42 },
+  { symbol: 'TRENT', category: 'Top Losers', price: 2770, change: -2.38 },
+  { symbol: 'NTPC', category: 'BSE/NSE 500', price: 360.75, change: -1.54 },
+  { symbol: 'CHOLAFIN', category: 'BSE/NSE 500', price: 1506, change: 1.35 },
+  { symbol: 'COFORGE', category: 'BSE/NSE 500', price: 1431.1, change: -0.38 },
+  { symbol: 'INDIGO', category: 'BSE/NSE 500', price: 4473.6, change: -0.78 },
+  { symbol: 'ACUTAAS', category: 'Top Gainers', price: 3329, change: 5.19 },
+  { symbol: 'CPPLUS', category: 'BSE/NSE 500', price: 3484, change: -1.52 },
+  { symbol: 'YESBANK', category: 'Top Gainers', price: 23.39, change: 2.72 },
+  { symbol: 'AMBER', category: 'Top Gainers', price: 7880, change: 3.45 },
+  { symbol: 'TECHM', category: 'BSE/NSE 500', price: 1482, change: -0.36 },
+  { symbol: 'ASHOKLEY', category: 'BSE/NSE 500', price: 145.41, change: 0.67 },
+  { symbol: 'SWIGGY', category: 'BSE/NSE 500', price: 251.2, change: -0.97 },
+  { symbol: 'HEROMOTOCO', category: 'BSE/NSE 500', price: 4825, change: -1.17 },
+  { symbol: 'AMBUJACEM', category: 'BSE/NSE 500', price: 418.3, change: -1.89 },
+  { symbol: 'KALYANKJIL', category: 'Top Gainers', price: 372.45, change: 2.86 },
+  { symbol: 'NBCC', category: 'BSE/NSE 500', price: 106.36, change: 2.19 },
+  { symbol: 'EICHERMOT', category: 'BSE/NSE 500', price: 7050, change: -0.84 },
+  { symbol: 'ADANIPORTS', category: 'BSE/NSE 500', price: 1826, change: 1.96 },
+  { symbol: 'INDIANB', category: 'BSE/NSE 500', price: 843.5, change: 0.75 },
+  { symbol: 'ZENTEC', category: 'BSE/NSE 500', price: 1819, change: 0.51 },
+  { symbol: 'JIOFIN', category: 'BSE/NSE 500', price: 237.29, change: 0.66 },
+  { symbol: 'FEDERALBNK', category: 'BSE/NSE 500', price: 304.8, change: 1.57 },
+  { symbol: 'TVSMOTOR', category: 'BSE/NSE 500', price: 3377, change: 0.43 },
+  { symbol: 'HDFCAMC', category: 'BSE/NSE 500', price: 2500.2, change: 1.27 },
+  { symbol: 'RVNL', category: 'BSE/NSE 500', price: 235.65, change: -0.34 },
+  { symbol: '360ONE', category: 'BSE/NSE 500', price: 1073.8, change: 0.19 },
+  { symbol: 'PNB', category: 'BSE/NSE 500', price: 107, change: 1.26 },
+  { symbol: 'BAJAJ-AUTO', category: 'BSE/NSE 500', price: 10350, change: -0.12 },
+  { symbol: 'POLYCAB', category: 'BSE/NSE 500', price: 9670, change: -0.49 },
+  { symbol: 'ANANTRAJ', category: 'Top Losers', price: 567, change: -3.79 },
+  { symbol: 'BAJAJFINSV', category: 'BSE/NSE 500', price: 1700, change: -0.57 },
+  { symbol: 'KAYNES', category: 'BSE/NSE 500', price: 3124.5, change: -2.07 },
+  { symbol: 'ACMESOLAR', category: 'BSE/NSE 500', price: 354.1, change: 2.39 },
+  { symbol: 'LUPIN', category: 'BSE/NSE 500', price: 2260, change: 0.45 },
+  { symbol: 'TATATECH', category: 'Top Gainers', price: 775, change: 3.56 },
+  { symbol: 'HCLTECH', category: 'BSE/NSE 500', price: 1155.1, change: -1.13 },
+  { symbol: 'HDFCLIFE', category: 'BSE/NSE 500', price: 574.8, change: 0.18 },
+  { symbol: 'TMCV', category: 'BSE/NSE 500', price: 368.5, change: -1.37 },
+  { symbol: 'RITES', category: 'Top Gainers', price: 209.95, change: 4.86 },
+  { symbol: 'PATANJALI', category: 'BSE/NSE 500', price: 422.05, change: -1.22 },
+  { symbol: 'WAAREEENER', category: 'BSE/NSE 500', price: 3051, change: -0.67 },
+  { symbol: 'FIRSTCRY', category: 'BSE/NSE 500', price: 219.4, change: -0.14 },
+  { symbol: 'CUMMINSIND', category: 'BSE/NSE 500', price: 5776, change: -0.2 },
+  { symbol: 'LAURUSLABS', category: 'BSE/NSE 500', price: 1445.5, change: 1.28 },
+  { symbol: 'UNIONBANK', category: 'BSE/NSE 500', price: 167.04, change: 0.3 },
+  { symbol: 'GMRAIRPORT', category: 'BSE/NSE 500', price: 101.93, change: -0.06 },
+  { symbol: 'GRASIM', category: 'BSE/NSE 500', price: 3092, change: -0.37 },
+  { symbol: 'HYUNDAI', category: 'BSE/NSE 500', price: 1905, change: -1.42 },
+  { symbol: 'PERSISTENT', category: 'BSE/NSE 500', price: 5023, change: -1.92 },
+  { symbol: 'LTF', category: 'BSE/NSE 500', price: 268.8, change: 0.79 },
+  { symbol: 'HAL', category: 'BSE/NSE 500', price: 4216, change: 0.6 },
+  { symbol: 'INDUSTOWER', category: 'BSE/NSE 500', price: 429.5, change: -0.22 },
+  { symbol: 'JSWSTEEL', category: 'BSE/NSE 500', price: 1286.6, change: -1.11 },
+  { symbol: 'IDFCFIRSTB', category: 'BSE/NSE 500', price: 72.4, change: 0.33 },
+  { symbol: 'VMM', category: 'BSE/NSE 500', price: 118.55, change: 0.25 },
+  { symbol: 'ONGC', category: 'BSE/NSE 500', price: 264.3, change: -1.21 },
+  { symbol: 'POWERGRID', category: 'BSE/NSE 500', price: 285.4, change: 0.28 },
+  { symbol: 'MOTHERSON', category: 'BSE/NSE 500', price: 143.41, change: -0.62 },
+  { symbol: 'OFSS', category: 'BSE/NSE 500', price: 9968.5, change: -1.28 },
+  { symbol: 'LENSKART', category: 'BSE/NSE 500', price: 506, change: -1.37 },
+  { symbol: 'DLF', category: 'BSE/NSE 500', price: 577.9, change: 0.02 },
+  { symbol: 'AUBANK', category: 'BSE/NSE 500', price: 969, change: 0.72 },
+  { symbol: 'GRSE', category: 'BSE/NSE 500', price: 2653.1, change: -0.87 },
+  { symbol: 'TATACOMM', category: 'BSE/NSE 500', price: 1970, change: -0.8 },
+  { symbol: 'SOLARINDS', category: 'BSE/NSE 500', price: 18415, change: 0.67 },
+  { symbol: 'AUROPHARMA', category: 'BSE/NSE 500', price: 1458, change: -0.38 },
+  { symbol: 'SAREGAMA', category: 'Top Gainers', price: 474, change: 4.73 },
+  { symbol: 'TORNTPHARM', category: 'BSE/NSE 500', price: 4416, change: 1.75 },
+  { symbol: 'RPOWER', category: 'Top Gainers', price: 28.71, change: 4.82 },
+  { symbol: 'NESTLEIND', category: 'BSE/NSE 500', price: 1391, change: 0.59 },
+  { symbol: 'SCHNEIDER', category: 'Top Gainers', price: 1167, change: 5.15 },
+  { symbol: 'VOLTAS', category: 'BSE/NSE 500', price: 1301, change: 1.13 },
+  { symbol: 'BDL', category: 'BSE/NSE 500', price: 1207.5, change: -0.44 },
+  { symbol: 'APLAPOLLO', category: 'BSE/NSE 500', price: 1825, change: 0.92 },
+  { symbol: 'BANKINDIA', category: 'BSE/NSE 500', price: 141.6, change: 1.37 },
+  { symbol: 'ABB', category: 'BSE/NSE 500', price: 7160, change: 0.06 },
+  { symbol: 'EMMVEE', category: 'BSE/NSE 500', price: 334.25, change: 1.46 },
+  { symbol: 'HINDCOPPER', category: 'BSE/NSE 500', price: 529, change: -2.29 },
+  { symbol: 'MUTHOOTFIN', category: 'BSE/NSE 500', price: 3154, change: -0.5 },
+  { symbol: 'JPPOWER', category: 'BSE/NSE 500', price: 19.04, change: 0 },
+  { symbol: 'FORCEMOT', category: 'BSE/NSE 500', price: 18250, change: -1.84 },
+  { symbol: 'INDUSINDBK', category: 'BSE/NSE 500', price: 903.1, change: -0.01 },
+  { symbol: 'KIMS', category: 'Top Gainers', price: 790, change: 3.28 },
+  { symbol: 'VBL', category: 'BSE/NSE 500', price: 521.9, change: -1.23 },
+  { symbol: 'LICHSGFIN', category: 'BSE/NSE 500', price: 548, change: 0.45 },
+  { symbol: 'UPL', category: 'BSE/NSE 500', price: 637, change: -0.34 },
+  { symbol: 'BPCL', category: 'BSE/NSE 500', price: 295.15, change: 0 },
+  { symbol: 'COCHINSHIP', category: 'Top Losers', price: 1433.1, change: -2.67 },
+  { symbol: 'APOLLOHOSP', category: 'BSE/NSE 500', price: 8314.5, change: 0.79 },
+  { symbol: 'DMART', category: 'BSE/NSE 500', price: 4142, change: 0.07 },
+  { symbol: 'TTML', category: 'Top Gainers', price: 46.09, change: 4.32 },
+  { symbol: 'ICICIAMC', category: 'BSE/NSE 500', price: 3260, change: -1.64 },
+  { symbol: 'FORTIS', category: 'BSE/NSE 500', price: 961.1, change: 2.17 },
+  { symbol: 'IOC', category: 'BSE/NSE 500', price: 138.3, change: -0.47 },
+  { symbol: 'CIPLA', category: 'BSE/NSE 500', price: 1402, change: 1.18 },
+  { symbol: 'MARICO', category: 'BSE/NSE 500', price: 810.1, change: -0.83 },
+  { symbol: 'NAUKRI', category: 'BSE/NSE 500', price: 986, change: -2.26 },
+  { symbol: 'PAYTM', category: 'BSE/NSE 500', price: 1066, change: 0.71 },
+  { symbol: 'MAZDOCK', category: 'BSE/NSE 500', price: 2425, change: -0.83 },
+  { symbol: 'RBLBANK', category: 'BSE/NSE 500', price: 351.45, change: -0.65 },
+  { symbol: 'CHENNPETRO', category: 'BSE/NSE 500', price: 1180, change: -0.89 },
+  { symbol: 'APARINDS', category: 'BSE/NSE 500', price: 13823, change: 0.83 },
+  { symbol: 'CDSL', category: 'BSE/NSE 500', price: 1216.7, change: -0.02 },
+  { symbol: 'ABCAPITAL', category: 'BSE/NSE 500', price: 357, change: 0.95 },
+  { symbol: 'GAIL', category: 'BSE/NSE 500', price: 168, change: 0.27 },
+  { symbol: 'PWL', category: 'Top Losers', price: 102.51, change: -3.71 },
+  { symbol: 'DIVISLAB', category: 'BSE/NSE 500', price: 6615.5, change: 0.29 },
+  { symbol: 'ICICIGI', category: 'BSE/NSE 500', price: 1755.6, change: 1.31 },
+  { symbol: 'CEMPRO', category: 'BSE/NSE 500', price: 1102.9, change: -2.16 },
+  { symbol: 'ENRIN', category: 'BSE/NSE 500', price: 3646, change: -1.48 },
+  { symbol: 'MAXHEALTH', category: 'BSE/NSE 500', price: 977, change: 1.12 },
+  { symbol: 'SBILIFE', category: 'BSE/NSE 500', price: 1785, change: 1.14 },
+  { symbol: 'LICI', category: 'BSE/NSE 500', price: 400, change: 0.34 },
+  { symbol: 'CROMPTON', category: 'BSE/NSE 500', price: 268, change: -0.48 },
+  { symbol: 'SIEMENS', category: 'BSE/NSE 500', price: 3700, change: 0.36 },
+  { symbol: 'BANDHANBNK', category: 'BSE/NSE 500', price: 205.92, change: 0.23 },
+  { symbol: 'RRKABEL', category: 'BSE/NSE 500', price: 2220, change: -0.13 },
+  { symbol: 'PREMIERENE', category: 'BSE/NSE 500', price: 1080.4, change: 0.24 },
+  { symbol: 'OIL', category: 'BSE/NSE 500', price: 483.4, change: -1.12 },
+  { symbol: 'LODHA', category: 'BSE/NSE 500', price: 895.6, change: 1.57 },
+  { symbol: 'JINDALSTEL', category: 'BSE/NSE 500', price: 1183, change: -1.19 },
+  { symbol: 'PRESTIGE', category: 'BSE/NSE 500', price: 1385, change: 2.08 },
+  { symbol: 'INOXWIND', category: 'BSE/NSE 500', price: 87.01, change: 1.43 },
+  { symbol: 'HINDPETRO', category: 'BSE/NSE 500', price: 385.25, change: -0.45 },
+  { symbol: 'UNOMINDA', category: 'BSE/NSE 500', price: 1095, change: 1.13 },
+  { symbol: 'EXIDEIND', category: 'BSE/NSE 500', price: 399.2, change: -1.04 },
+  { symbol: 'TATACONSUM', category: 'BSE/NSE 500', price: 1131.8, change: -1.52 },
+  { symbol: 'NLCINDIA', category: 'BSE/NSE 500', price: 336.8, change: -0.53 },
+  { symbol: 'GLENMARK', category: 'BSE/NSE 500', price: 2165, change: -0.72 },
+  { symbol: 'NATCOPHARM', category: 'Top Losers', price: 893, change: -2.8 },
+  { symbol: 'GLAND', category: 'Top Gainers', price: 2287, change: 3.04 },
+  { symbol: 'GODREJPROP', category: 'BSE/NSE 500', price: 1703.7, change: 0.55 },
+  { symbol: 'IIFL', category: 'Top Losers', price: 517, change: -2.51 },
+  { symbol: 'KEI', category: 'BSE/NSE 500', price: 5336, change: 0.76 },
+  { symbol: 'GMDCLTD', category: 'Top Losers', price: 658.55, change: -2.7 },
+  { symbol: 'KFINTECH', category: 'BSE/NSE 500', price: 867, change: 1.6 },
+  { symbol: 'TATAPOWER', category: 'BSE/NSE 500', price: 409, change: -0.44 },
+  { symbol: 'BIOCON', category: 'BSE/NSE 500', price: 413.45, change: -0.62 },
+  { symbol: 'PIRAMALFIN', category: 'BSE/NSE 500', price: 1979, change: 0.69 },
+  { symbol: 'PNBHOUSING', category: 'BSE/NSE 500', price: 998.9, change: -0.05 },
+  { symbol: 'MAHABANK', category: 'BSE/NSE 500', price: 79.25, change: 0.7 },
+  { symbol: 'LTM', category: 'BSE/NSE 500', price: 4025.9, change: -1.03 },
+  { symbol: 'ZYDUSLIFE', category: 'BSE/NSE 500', price: 1090.5, change: 0.54 },
+  { symbol: 'OLECTRA', category: 'Top Losers', price: 1291, change: -2.29 },
+  { symbol: 'BOSCHLTD', category: 'BSE/NSE 500', price: 37200, change: 0.54 },
+  { symbol: 'DRREDDY', category: 'BSE/NSE 500', price: 1283, change: 1.22 },
+  { symbol: 'THERMAX', category: 'BSE/NSE 500', price: 4836, change: -0.82 },
+  { symbol: 'AIAENG', category: 'BSE/NSE 500', price: 4630, change: 0.73 },
+  { symbol: 'SONACOMS', category: 'BSE/NSE 500', price: 604, change: 0.47 },
+  { symbol: 'PGEL', category: 'BSE/NSE 500', price: 487.15, change: -1.17 },
+  { symbol: 'SYRMA', category: 'BSE/NSE 500', price: 1230.1, change: 0.7 },
+  { symbol: 'MRF', category: 'BSE/NSE 500', price: 123400, change: -1.05 },
+  { symbol: 'SAILIFE', category: 'Top Gainers', price: 1188, change: 2.48 },
+  { symbol: 'JSWENERGY', category: 'BSE/NSE 500', price: 581, change: -1.2 },
+  { symbol: 'LLOYDSME', category: 'BSE/NSE 500', price: 1777, change: 0.08 },
+  { symbol: 'HAVELLS', category: 'BSE/NSE 500', price: 1152.1, change: -1.23 },
+  { symbol: 'NAM-INDIA', category: 'BSE/NSE 500', price: 1111, change: -1.6 },
+  { symbol: 'HBLENGINE', category: 'BSE/NSE 500', price: 793.55, change: -0.39 },
+  { symbol: 'CONCOR', category: 'BSE/NSE 500', price: 450.6, change: -0.83 },
+  { symbol: 'CARTRADE', category: 'Top Gainers', price: 1970, change: 2.96 },
+  { symbol: 'PHOENIXLTD', category: 'BSE/NSE 500', price: 1742.6, change: 0.77 },
+  { symbol: 'BRITANNIA', category: 'BSE/NSE 500', price: 5129, change: 0.77 },
+  { symbol: 'M&MFIN', category: 'BSE/NSE 500', price: 290.35, change: 0.45 },
+  { symbol: 'JAINREC', category: 'Top Losers', price: 344.2, change: -3.77 },
+  { symbol: 'SARDAEN', category: 'Top Gainers', price: 550, change: 3.34 },
+  { symbol: 'MPHASIS', category: 'BSE/NSE 500', price: 2330.5, change: 0.63 },
+  { symbol: 'ICICIPRULI', category: 'BSE/NSE 500', price: 485.3, change: 2.07 },
+  { symbol: 'DABUR', category: 'BSE/NSE 500', price: 425.05, change: 0.09 },
+  { symbol: 'PETRONET', category: 'BSE/NSE 500', price: 269.6, change: 0.2 },
+  { symbol: 'IRFC', category: 'BSE/NSE 500', price: 96.37, change: 0.32 },
+  { symbol: 'KARURVYSYA', category: 'BSE/NSE 500', price: 280.45, change: -1.23 },
+  { symbol: 'CAMS', category: 'BSE/NSE 500', price: 761.4, change: 0.3 },
+  { symbol: 'BLUESTARCO', category: 'BSE/NSE 500', price: 1587, change: -1.28 },
+  { symbol: 'VIJAYA', category: 'BSE/NSE 500', price: 1355, change: -0.32 },
+  { symbol: 'INDHOTEL', category: 'BSE/NSE 500', price: 656.95, change: -0.7 },
+  { symbol: 'JBMA', category: 'Top Losers', price: 675, change: -2.57 },
+  { symbol: 'ALKEM', category: 'BSE/NSE 500', price: 5250, change: -0.5 },
+  { symbol: 'BHARATFORG', category: 'BSE/NSE 500', price: 1930.5, change: -0.36 },
+  { symbol: 'MANAPPURAM', category: 'BSE/NSE 500', price: 308.5, change: -0.77 },
+  { symbol: 'FINCABLES', category: 'Top Gainers', price: 1055.1, change: 3.63 },
+  { symbol: 'TATAELXSI', category: 'BSE/NSE 500', price: 4292, change: -0.07 },
+  { symbol: 'TATACAP', category: 'BSE/NSE 500', price: 314.55, change: 1.08 },
+  { symbol: 'COROMANDEL', category: 'BSE/NSE 500', price: 1798, change: 1.99 },
+  { symbol: 'PIDILITIND', category: 'BSE/NSE 500', price: 1473.9, change: 0.19 },
+  { symbol: 'REDINGTON', category: 'Top Losers', price: 239.33, change: -3.13 },
+  { symbol: 'BAJAJHLDNG', category: 'BSE/NSE 500', price: 10200, change: 0.72 },
+  { symbol: 'PTCIL', category: 'BSE/NSE 500', price: 18598, change: -0.48 },
+  { symbol: 'WELCORP', category: 'BSE/NSE 500', price: 1393, change: -0.69 },
+  { symbol: 'CENTRALBK', category: 'BSE/NSE 500', price: 30.4, change: 0.4 },
+  { symbol: 'COHANCE', category: 'BSE/NSE 500', price: 430.9, change: 1.32 },
+  { symbol: 'PAGEIND', category: 'BSE/NSE 500', price: 38300, change: -1.38 },
+  { symbol: 'CGCL', category: 'BSE/NSE 500', price: 202.5, change: -0.01 },
+  { symbol: 'NEWGEN', category: 'BSE/NSE 500', price: 488, change: -1.72 },
+  { symbol: 'RADICO', category: 'BSE/NSE 500', price: 3495, change: -0.21 },
+  { symbol: 'SHYAMMETL', category: 'BSE/NSE 500', price: 1001.5, change: -0.05 },
+  { symbol: 'IEX', category: 'BSE/NSE 500', price: 122.36, change: -1.38 },
+  { symbol: 'KPITTECH', category: 'BSE/NSE 500', price: 775.45, change: 0.32 },
+  { symbol: 'JINDALSAW', category: 'Top Losers', price: 251.25, change: -3.37 },
+  { symbol: 'GODREJCP', category: 'BSE/NSE 500', price: 995.1, change: -0.03 },
+  { symbol: 'IREDA', category: 'BSE/NSE 500', price: 123.46, change: 0.18 },
+  { symbol: 'ANANDRATHI', category: 'BSE/NSE 500', price: 1755, change: 0.25 },
+  { symbol: 'MRPL', category: 'BSE/NSE 500', price: 154.8, change: -1.14 },
+  { symbol: 'TARIL', category: 'BSE/NSE 500', price: 321.5, change: 1.29 },
+  { symbol: 'IDBI', category: 'BSE/NSE 500', price: 73.19, change: 0.34 },
+  { symbol: 'ASTRAL', category: 'BSE/NSE 500', price: 1523, change: -1.7 },
+  { symbol: 'TIINDIA', category: 'BSE/NSE 500', price: 3121, change: 0.73 },
+  { symbol: 'GESHIP', category: 'BSE/NSE 500', price: 1469.8, change: -1.49 },
+  { symbol: 'ABLBL', category: 'BSE/NSE 500', price: 101.53, change: 0.71 },
+  { symbol: 'TITAGARH', category: 'Top Losers', price: 838, change: -3.01 },
+  { symbol: 'AEGISLOG', category: 'BSE/NSE 500', price: 768.5, change: 1.68 },
+  { symbol: 'ACC', category: 'BSE/NSE 500', price: 1330, change: -1.54 },
+  { symbol: 'POONAWALLA', category: 'BSE/NSE 500', price: 389, change: -1.11 },
+  { symbol: 'GODFRYPHLP', category: 'BSE/NSE 500', price: 2221.9, change: -0.54 },
+  { symbol: 'PARADEEP', category: 'BSE/NSE 500', price: 127.65, change: 1.28 },
+  { symbol: 'ENGINERSIN', category: 'BSE/NSE 500', price: 237.75, change: 0.03 },
+  { symbol: 'JUBLFOOD', category: 'BSE/NSE 500', price: 425.15, change: -1.2 },
+  { symbol: 'CHOICEIN', category: 'BSE/NSE 500', price: 662, change: -1.39 },
+  { symbol: 'SUNDARMFIN', category: 'BSE/NSE 500', price: 4106, change: 0.07 },
+  { symbol: 'SHREECEM', category: 'BSE/NSE 500', price: 24110, change: -1.53 },
+  { symbol: 'ITCHOTELS', category: 'BSE/NSE 500', price: 153.5, change: -1.18 },
+  { symbol: 'IKS', category: 'BSE/NSE 500', price: 1675, change: -0.93 },
+  { symbol: 'JSWINFRA', category: 'BSE/NSE 500', price: 277.55, change: 1.74 },
+  { symbol: 'NUVAMA', category: 'BSE/NSE 500', price: 1574, change: 0.47 },
+  { symbol: 'NSLNISP', category: 'BSE/NSE 500', price: 49.91, change: -1.6 },
+  { symbol: 'BAJAJHFL', category: 'BSE/NSE 500', price: 84.05, change: 0.76 },
+  { symbol: 'MOTILALOFS', category: 'BSE/NSE 500', price: 854.3, change: -0.8 },
+  { symbol: 'SBICARD', category: 'BSE/NSE 500', price: 590, change: 0.08 },
+  { symbol: 'MFSL', category: 'BSE/NSE 500', price: 1602.3, change: 1.32 },
+  { symbol: 'DELHIVERY', category: 'BSE/NSE 500', price: 444.15, change: 1.32 },
+  { symbol: 'LTTS', category: 'BSE/NSE 500', price: 3210, change: -1.9 },
+  { symbol: 'JSL', category: 'BSE/NSE 500', price: 690, change: -0.97 },
+  { symbol: 'GRAPHITE', category: 'BSE/NSE 500', price: 704.85, change: -1.49 },
+  { symbol: 'NAVINFLUOR', category: 'BSE/NSE 500', price: 7035, change: -0.78 },
+  { symbol: 'LGEINDIA', category: 'BSE/NSE 500', price: 1500, change: -0.66 },
+  { symbol: 'NYKAA', category: 'BSE/NSE 500', price: 262, change: -2.07 },
+  { symbol: 'SUPREMEIND', category: 'BSE/NSE 500', price: 3598.8, change: -1.21 },
+  { symbol: 'KIRLOSENG', category: 'BSE/NSE 500', price: 1911.4, change: -1.97 },
+  { symbol: 'GRANULES', category: 'BSE/NSE 500', price: 785.3, change: -0.76 },
+  { symbol: 'ELECON', category: 'Top Gainers', price: 530, change: 4.7 },
+  { symbol: 'TRITURBINE', category: 'BSE/NSE 500', price: 689.15, change: -0.61 },
+  { symbol: 'CYIENT', category: 'BSE/NSE 500', price: 878, change: -1.62 },
+  { symbol: 'FIVESTAR', category: 'BSE/NSE 500', price: 435.95, change: 0.32 },
+  { symbol: 'NH', category: 'BSE/NSE 500', price: 1970, change: 1.07 },
+  { symbol: 'EIDPARRY', category: 'BSE/NSE 500', price: 740, change: -1.5 },
+  { symbol: 'DALBHARAT', category: 'BSE/NSE 500', price: 1687.9, change: -2.17 },
+  { symbol: 'SRF', category: 'BSE/NSE 500', price: 2702.1, change: -0.9 },
+  { symbol: 'BALKRISIND', category: 'Top Losers', price: 2140.9, change: -2.33 },
+  { symbol: 'LATENTVIEW', category: 'Top Gainers', price: 314, change: 2.58 },
+  { symbol: 'JBCHEPHARM', category: 'BSE/NSE 500', price: 2175.7, change: 1.97 },
+  { symbol: 'SAGILITY', category: 'BSE/NSE 500', price: 40.05, change: -0.17 },
+  { symbol: 'ARE&M', category: 'BSE/NSE 500', price: 852, change: -0.86 },
+  { symbol: 'OBEROIRLTY', category: 'BSE/NSE 500', price: 1637, change: 0.31 },
+  { symbol: 'IPCALAB', category: 'BSE/NSE 500', price: 1647, change: 2.04 },
+  { symbol: 'KEC', category: 'BSE/NSE 500', price: 497, change: -1.86 },
+  { symbol: 'IGL', category: 'BSE/NSE 500', price: 164.19, change: 1.32 },
+  { symbol: 'MEDANTA', category: 'BSE/NSE 500', price: 1239.4, change: 0.62 },
+  { symbol: 'BELRISE', category: 'BSE/NSE 500', price: 216.5, change: 0.18 },
+  { symbol: 'IRCTC', category: 'BSE/NSE 500', price: 528.5, change: 0.19 },
+  { symbol: 'MAPMYINDIA', category: 'BSE/NSE 500', price: 852.1, change: 2.44 },
+  { symbol: 'MANKIND', category: 'BSE/NSE 500', price: 2332, change: -0.89 },
+  { symbol: 'POLYMED', category: 'BSE/NSE 500', price: 1420, change: 1.07 },
+  { symbol: 'FSL', category: 'BSE/NSE 500', price: 268, change: 0.9 },
+  { symbol: 'URBANCO', category: 'BSE/NSE 500', price: 125.95, change: 2.1 },
+  { symbol: 'LALPATHLAB', category: 'BSE/NSE 500', price: 1533, change: -1.81 },
+  { symbol: 'ACE', category: 'Top Gainers', price: 899.5, change: 3.5 },
+  { symbol: 'COLPAL', category: 'BSE/NSE 500', price: 2001.6, change: -0.14 },
+  { symbol: 'INTELLECT', category: 'BSE/NSE 500', price: 743, change: 1.38 },
+  { symbol: 'CRAFTSMAN', category: 'BSE/NSE 500', price: 9045, change: -1.41 },
+  { symbol: 'CESC', category: 'BSE/NSE 500', price: 179.3, change: 0.84 },
+  { symbol: 'TORNTPOWER', category: 'BSE/NSE 500', price: 1461.8, change: 1.51 },
+  { symbol: 'J&KBANK', category: 'BSE/NSE 500', price: 147.8, change: 0.08 },
+  { symbol: 'TECHNOE', category: 'BSE/NSE 500', price: 1019.9, change: 0.88 },
+  { symbol: 'UNITDSPR', category: 'BSE/NSE 500', price: 1247.1, change: -0.21 },
+  { symbol: 'JMFINANCIL', category: 'BSE/NSE 500', price: 121.29, change: 0.08 },
+  { symbol: 'MMTC', category: 'BSE/NSE 500', price: 68, change: -0.45 },
+  { symbol: 'MGL', category: 'BSE/NSE 500', price: 1090, change: 1.45 },
+  { symbol: 'BSOFT', category: 'BSE/NSE 500', price: 327, change: 0.58 },
+  { symbol: 'SCHAEFFLER', category: 'BSE/NSE 500', price: 4052.1, change: 1.37 },
+  { symbol: 'CARBORUNIV', category: 'BSE/NSE 500', price: 1047, change: 1.79 },
+  { symbol: 'CUB', category: 'BSE/NSE 500', price: 243.8, change: -0.95 },
+  { symbol: 'JKCEMENT', category: 'BSE/NSE 500', price: 4937, change: 0.35 },
+  { symbol: 'AJANTPHARM', category: 'BSE/NSE 500', price: 2980.1, change: 1.1 },
+  { symbol: 'GPIL', category: 'BSE/NSE 500', price: 280.3, change: -1.99 },
+  { symbol: 'TATACHEM', category: 'BSE/NSE 500', price: 718, change: -0.35 },
+  { symbol: 'ESCORTS', category: 'BSE/NSE 500', price: 2769.5, change: 0.67 },
+  { symbol: 'IGIL', category: 'Top Gainers', price: 372.95, change: 3.02 },
+  { symbol: 'HONASA', category: 'BSE/NSE 500', price: 415.95, change: -0.26 },
+  { symbol: 'MINDACORP', category: 'BSE/NSE 500', price: 646.5, change: 0.19 },
+  { symbol: 'MSUMI', category: 'BSE/NSE 500', price: 38.68, change: 0.99 },
+  { symbol: 'TIMKEN', category: 'BSE/NSE 500', price: 3638.1, change: 1.87 },
+  { symbol: 'AARTIIND', category: 'BSE/NSE 500', price: 459.25, change: -0.18 },
+  { symbol: 'TENNIND', category: 'BSE/NSE 500', price: 590.9, change: 1.57 },
+  { symbol: 'ANURAS', category: 'BSE/NSE 500', price: 1320, change: -2.09 },
+  { symbol: 'PPLPHARMA', category: 'BSE/NSE 500', price: 166.52, change: -1.8 },
+  { symbol: 'BALRAMCHIN', category: 'BSE/NSE 500', price: 532.3, change: 0.02 },
+  { symbol: 'JKTYRE', category: 'BSE/NSE 500', price: 381.8, change: -0.97 },
+  { symbol: 'SAPPHIRE', category: 'BSE/NSE 500', price: 177.04, change: -2.12 },
+  { symbol: 'USHAMART', category: 'BSE/NSE 500', price: 511.5, change: -1.6 },
+  { symbol: 'BLS', category: 'BSE/NSE 500', price: 261, change: -0.89 },
+  { symbol: 'PIIND', category: 'BSE/NSE 500', price: 2730, change: 0.83 },
+  { symbol: 'HEG', category: 'BSE/NSE 500', price: 538.25, change: -1.17 },
+  { symbol: 'LEMONTREE', category: 'BSE/NSE 500', price: 109.9, change: -1.04 },
+  { symbol: 'GILLETTE', category: 'BSE/NSE 500', price: 7761, change: 0.71 },
+  { symbol: 'ONESOURCE', category: 'Top Losers', price: 1790, change: -2.61 },
+  { symbol: 'HUDCO', category: 'BSE/NSE 500', price: 205.49, change: 0.4 },
+  { symbol: 'CHAMBLFERT', category: 'BSE/NSE 500', price: 467.95, change: 1.13 },
+  { symbol: 'AFFLE', category: 'BSE/NSE 500', price: 1470.9, change: -0.76 },
+  { symbol: 'ECLERX', category: 'BSE/NSE 500', price: 1388, change: -1.39 },
+  { symbol: 'PCBL', category: 'BSE/NSE 500', price: 289.5, change: -1.21 },
+  { symbol: 'CONCORDBIO', category: 'BSE/NSE 500', price: 1224.5, change: -1.11 },
+  { symbol: 'BEML', category: 'BSE/NSE 500', price: 1741.5, change: 0.39 },
+  { symbol: 'KPIL', category: 'BSE/NSE 500', price: 1289.9, change: -0.1 },
+  { symbol: 'CHOLAHLDNG', category: 'BSE/NSE 500', price: 1445, change: -0.17 },
+  { symbol: 'SOBHA', category: 'BSE/NSE 500', price: 1334, change: -0.43 },
+  { symbol: 'ITI', category: 'BSE/NSE 500', price: 301.4, change: -0.13 },
+  { symbol: 'SUNTV', category: 'BSE/NSE 500', price: 515.65, change: 0.73 },
+  { symbol: 'ELGIEQUIP', category: 'BSE/NSE 500', price: 608.45, change: -2.2 },
+  { symbol: 'IRCON', category: 'BSE/NSE 500', price: 136.74, change: 0.63 },
+  { symbol: 'BRIGADE', category: 'BSE/NSE 500', price: 650.75, change: 0.22 },
+  { symbol: 'AWL', category: 'BSE/NSE 500', price: 188.89, change: -0.2 },
+  { symbol: 'AAVAS', category: 'BSE/NSE 500', price: 1295, change: -0.42 },
+  { symbol: 'NEULANDLAB', category: 'BSE/NSE 500', price: 16875, change: 0.09 },
+  { symbol: 'ZENSARTECH', category: 'BSE/NSE 500', price: 484, change: 0.51 },
+  { symbol: 'VTL', category: 'BSE/NSE 500', price: 634.5, change: 0.46 },
+  { symbol: 'CHALET', category: 'BSE/NSE 500', price: 777.05, change: 0.3 },
+  { symbol: 'ERIS', category: 'BSE/NSE 500', price: 1359.7, change: -0.56 },
+  { symbol: 'JWL', category: 'BSE/NSE 500', price: 278.45, change: -0.5 },
+  { symbol: 'ABFRL', category: 'BSE/NSE 500', price: 60.24, change: -1.29 },
+  { symbol: 'KPRMILL', category: 'BSE/NSE 500', price: 1083, change: -1.83 },
+  { symbol: 'EMCURE', category: 'BSE/NSE 500', price: 1760, change: 0.85 },
+  { symbol: 'CREDITACC', category: 'BSE/NSE 500', price: 1261.1, change: -1 },
+  { symbol: 'HOMEFIRST', category: 'BSE/NSE 500', price: 1080, change: 1.97 },
+  { symbol: 'GRAVITA', category: 'BSE/NSE 500', price: 1630, change: -0.59 },
+  { symbol: 'ANTHEM', category: 'BSE/NSE 500', price: 762, change: 2.21 },
+  { symbol: 'PVRINOX', category: 'BSE/NSE 500', price: 977, change: 0.07 },
+  { symbol: 'NCC', category: 'BSE/NSE 500', price: 146.12, change: -0.55 },
+  { symbol: 'RAILTEL', category: 'BSE/NSE 500', price: 313, change: -0.43 },
+  { symbol: 'STARHEALTH', category: 'BSE/NSE 500', price: 526.1, change: -0.03 },
+  { symbol: 'SJVN', category: 'BSE/NSE 500', price: 73.7, change: -0.04 },
+  { symbol: 'ABSLAMC', category: 'BSE/NSE 500', price: 1045.5, change: 1.09 },
+  { symbol: 'NTPCGREEN', category: 'BSE/NSE 500', price: 100.84, change: 0 },
+  { symbol: 'SIGNATURE', category: 'BSE/NSE 500', price: 819, change: 0.83 },
+  { symbol: 'APTUS', category: 'BSE/NSE 500', price: 265, change: 0.78 },
+  { symbol: 'ABDL', category: 'BSE/NSE 500', price: 583.8, change: 2.09 },
+  { symbol: 'ASTERDM', category: 'BSE/NSE 500', price: 755.85, change: 2.41 },
+  { symbol: 'CAPLIPOINT', category: 'BSE/NSE 500', price: 2036, change: 0.81 },
+  { symbol: 'AADHARHFC', category: 'BSE/NSE 500', price: 465.7, change: -0.89 },
+  { symbol: 'GABRIEL', category: 'BSE/NSE 500', price: 1002, change: -1.28 },
+  { symbol: 'HDBFS', category: 'BSE/NSE 500', price: 641, change: -0.54 },
+  { symbol: 'NAVA', category: 'BSE/NSE 500', price: 601, change: -0.34 },
+  { symbol: 'IOB', category: 'BSE/NSE 500', price: 32.94, change: 0.06 },
+  { symbol: 'EMAMILTD', category: 'BSE/NSE 500', price: 385.4, change: -1.36 },
+  { symbol: 'IRB', category: 'BSE/NSE 500', price: 21.23, change: -0.33 },
+  { symbol: 'DEEPAKFERT', category: 'BSE/NSE 500', price: 1425, change: 0.31 },
+  { symbol: 'CCL', category: 'BSE/NSE 500', price: 1080, change: 1.15 },
+  { symbol: 'SWANCORP', category: 'BSE/NSE 500', price: 312, change: -1.31 },
+  { symbol: 'APOLLOTYRE', category: 'BSE/NSE 500', price: 396.05, change: 0.08 },
+  { symbol: 'SONATSOFTW', category: 'BSE/NSE 500', price: 264.5, change: -0.11 },
+  { symbol: 'HONAUT', category: 'BSE/NSE 500', price: 34710, change: 0.65 },
+  { symbol: 'JSWCEMENT', category: 'BSE/NSE 500', price: 127, change: -0.08 },
+  { symbol: 'CEATLTD', category: 'BSE/NSE 500', price: 3189, change: -1.28 },
+  { symbol: 'ABREL', category: 'BSE/NSE 500', price: 1239.5, change: -0.92 },
+  { symbol: 'TATAINVEST', category: 'BSE/NSE 500', price: 670.75, change: 0.62 },
+  { symbol: 'TEGA', category: 'BSE/NSE 500', price: 1846.9, change: -1.35 },
+  { symbol: 'AIIL', category: 'Top Gainers', price: 464, change: 2.81 },
+  { symbol: 'BIKAJI', category: 'BSE/NSE 500', price: 654.8, change: 1.43 },
+  { symbol: 'ZFCVINDIA', category: 'BSE/NSE 500', price: 14450, change: -0.93 },
+  { symbol: 'CASTROLIND', category: 'BSE/NSE 500', price: 183.7, change: -0.01 },
+  { symbol: 'FLUOROCHEM', category: 'BSE/NSE 500', price: 3568, change: -0.73 },
+  { symbol: 'CANFINHOME', category: 'BSE/NSE 500', price: 809, change: -0.92 },
+  { symbol: 'RHIM', category: 'BSE/NSE 500', price: 397, change: -1.03 },
+  { symbol: 'INDGN', category: 'BSE/NSE 500', price: 523, change: 0.96 },
+  { symbol: 'PFIZER', category: 'BSE/NSE 500', price: 4460, change: 0.85 },
+  { symbol: 'SYNGENE', category: 'BSE/NSE 500', price: 434, change: -0.36 },
+  { symbol: 'ZYDUSWELL', category: 'BSE/NSE 500', price: 503, change: 0.31 },
+  { symbol: 'UCOBANK', category: 'BSE/NSE 500', price: 25.3, change: 0.92 },
+  { symbol: 'BLUEJET', category: 'Top Losers', price: 464.5, change: -2.33 },
+  { symbol: 'LTFOODS', category: 'BSE/NSE 500', price: 384.6, change: -0.19 },
+  { symbol: 'LINDEINDIA', category: 'BSE/NSE 500', price: 7050, change: -0.27 },
+  { symbol: 'CLEAN', category: 'BSE/NSE 500', price: 790, change: 0.16 },
+  { symbol: 'ENDURANCE', category: 'BSE/NSE 500', price: 2551, change: -0.83 },
+  { symbol: 'HEXT', category: 'BSE/NSE 500', price: 525.7, change: -0.56 },
+  { symbol: 'CIEINDIA', category: 'BSE/NSE 500', price: 453, change: -0.64 },
+  { symbol: 'GICRE', category: 'BSE/NSE 500', price: 393, change: 1.25 },
+  { symbol: 'CRISIL', category: 'BSE/NSE 500', price: 3875, change: -0.74 },
+  { symbol: 'RAMCOCEM', category: 'BSE/NSE 500', price: 877.25, change: -0.02 },
+  { symbol: 'BAYERCROP', category: 'BSE/NSE 500', price: 4360, change: -1.06 },
+  { symbol: 'BBTC', category: 'Top Gainers', price: 1529.9, change: 2.69 },
+  { symbol: 'RAINBOW', category: 'BSE/NSE 500', price: 1345, change: -0.15 },
+  { symbol: 'DOMS', category: 'BSE/NSE 500', price: 2095.8, change: -1.24 },
+  { symbol: 'DEEPAKNTR', category: 'BSE/NSE 500', price: 1680.9, change: 0.25 },
+  { symbol: 'DEVYANI', category: 'BSE/NSE 500', price: 113.47, change: -0.05 },
+  { symbol: 'TRIDENT', category: 'BSE/NSE 500', price: 24.41, change: 0.33 },
+  { symbol: 'ABBOTINDIA', category: 'BSE/NSE 500', price: 26000, change: 0.7 },
+  { symbol: 'WHIRLPOOL', category: 'BSE/NSE 500', price: 799, change: -1.19 },
+  { symbol: 'WELSPUNLIV', category: 'BSE/NSE 500', price: 143.79, change: -0.34 },
+  { symbol: 'BHARTIHEXA', category: 'BSE/NSE 500', price: 1475, change: -0.96 },
+  { symbol: 'FACT', category: 'BSE/NSE 500', price: 869.8, change: 0.5 },
+  { symbol: 'BERGEPAINT', category: 'BSE/NSE 500', price: 492, change: -0.46 },
+  { symbol: 'KAJARIACER', category: 'BSE/NSE 500', price: 1087, change: -0.75 },
+  { symbol: 'UBL', category: 'BSE/NSE 500', price: 1325, change: -1.9 },
+  { symbol: 'RKFORGE', category: 'BSE/NSE 500', price: 555.35, change: -1.3 },
+  { symbol: 'NIVABUPA', category: 'BSE/NSE 500', price: 82.68, change: 1.14 },
+  { symbol: 'JUBLINGREA', category: 'BSE/NSE 500', price: 627, change: 0.82 },
+  { symbol: '3MINDIA', category: 'BSE/NSE 500', price: 32010, change: -0.87 },
+  { symbol: 'AFCONS', category: 'BSE/NSE 500', price: 320, change: -1.93 },
+  { symbol: 'NIACL', category: 'BSE/NSE 500', price: 151, change: -0.45 },
+  { symbol: 'NUVOCO', category: 'BSE/NSE 500', price: 319.75, change: -0.84 },
+  { symbol: 'ATUL', category: 'BSE/NSE 500', price: 6671.5, change: -1 },
+  { symbol: 'JUBLPHARMA', category: 'BSE/NSE 500', price: 975, change: 0.44 },
+  { symbol: 'GODREJIND', category: 'BSE/NSE 500', price: 1044.2, change: -0.3 },
+  { symbol: 'GLAXO', category: 'BSE/NSE 500', price: 2165, change: -0.07 },
+  { symbol: 'AEGISVOPAK', category: 'BSE/NSE 500', price: 189.1, change: -1.27 },
+  { symbol: 'SBFC', category: 'BSE/NSE 500', price: 93, change: -0.35 },
+  { symbol: 'ASAHIINDIA', category: 'BSE/NSE 500', price: 904, change: 1.41 },
+  { symbol: 'SPLPETRO', category: 'BSE/NSE 500', price: 699.95, change: -0.5 },
+  { symbol: 'INDIAMART', category: 'BSE/NSE 500', price: 1997, change: 0.14 },
+  { symbol: 'DCMSHRIRAM', category: 'BSE/NSE 500', price: 1022, change: 0.04 },
+  { symbol: 'BATAINDIA', category: 'BSE/NSE 500', price: 663.6, change: 0.92 },
+  { symbol: 'INDIACEM', category: 'BSE/NSE 500', price: 381, change: 0.13 },
+  { symbol: 'TRAVELFOOD', category: 'BSE/NSE 500', price: 1282.1, change: -0.31 },
+  { symbol: 'UTIAMC', category: 'BSE/NSE 500', price: 930, change: 0.08 },
+  { symbol: 'SUMICHEM', category: 'BSE/NSE 500', price: 475, change: 0.4 },
+  { symbol: 'BLUEDART', category: 'BSE/NSE 500', price: 4700, change: -0.42 },
+  { symbol: 'THELEELA', category: 'BSE/NSE 500', price: 419.85, change: 0.47 },
+  { symbol: 'TBOTEK', category: 'BSE/NSE 500', price: 1226.9, change: 0.43 },
+  { symbol: 'EIHOTEL', category: 'BSE/NSE 500', price: 293, change: 0.45 },
+  { symbol: 'JSWDULUX', category: 'BSE/NSE 500', price: 3105, change: 0.87 },
+  { symbol: 'GALLANTT', category: 'BSE/NSE 500', price: 647, change: -0.16 },
+  { symbol: 'CANHLIFE', category: 'BSE/NSE 500', price: 137.5, change: 0.34 }
+];

@@ -2155,3 +2155,21 @@ body.crisis-panic::after {
   margin-left: 6px;
 }
 
+
+@keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Responsive Screeners */
+@media (max-width: 768px) {
+  #panel-mutualfunds > div, 
+  #panel-equity > div, #panel-fundamentals > div {
+    flex-wrap: wrap;
+    height: auto !important;
+  }
+  #panel-mutualfunds .card:first-child,
+  #panel-equity .card:first-child, #panel-fundamentals .card:first-child {
+    flex: 1 1 100% !important;
+    max-height: 200px;
+    border-right: none !important;
+    border-bottom: 1px solid var(--border);
+  }
+}
