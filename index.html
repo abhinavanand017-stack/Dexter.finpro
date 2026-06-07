@@ -977,30 +977,218 @@
     
     <!-- ======================== FUNDAMENTALS TAB ======================== -->
     <div class="tab-panel" id="panel-fundamentals">
-      <h2>Screener.in Fundamentals (Top 500)</h2>
-      <div style="display: flex; gap: 20px; margin-top: 15px; height: 600px;">
-        
-        <!-- Sidebar Tree -->
-        <div class="card" style="flex: 0 0 300px; overflow-y: auto; padding: 15px; border-right: 1px solid var(--border);">
-          <div class="card-label">MARKET CAP</div>
-          <ul id="fun-category-list" style="list-style: none; padding-left: 0; margin-top: 10px; font-size: 14px; line-height: 2.2;">
-            <!-- Populated via JS -->
-          </ul>
+      <div class="panel-header">
+        <h2>Fundamental Screener — Research Hub</h2>
+        <p>Deep-dive fundamental analysis powered by India's best data sources. Click any platform to open it, or click 🔗 on a stock for contextual research links.</p>
+      </div>
+
+      <!-- ══════ Research Hub Bar ══════ -->
+      <div class="research-hub-bar" id="research-hub-bar">
+
+        <!-- Free Data Sources -->
+        <div class="hub-group">
+          <div class="hub-group-label free">🟢 FREE DATA</div>
+          <div class="hub-group-btns">
+            <button class="hub-btn" data-url="https://www.nseindia.com" title="Official NSE exchange data, index constituents, P/E, P/B">
+              <span class="hub-icon">🏛️</span><span class="hub-name">NSE India</span>
+            </button>
+            <button class="hub-btn" data-url="https://www.bseindia.com" title="Quarterly results, annual reports, shareholding patterns">
+              <span class="hub-icon">🏦</span><span class="hub-name">BSE India</span>
+            </button>
+            <button class="hub-btn" data-url="https://www.screener.in" title="10 years of P&L, balance sheet, cash flow — free export">
+              <span class="hub-icon">📊</span><span class="hub-name">Screener.in</span>
+            </button>
+            <button class="hub-btn" data-url="https://www.tickertape.in" title="Fundamental scores, 200+ filter screener">
+              <span class="hub-icon">🎯</span><span class="hub-name">Tickertape</span>
+            </button>
+            <button class="hub-btn" data-url="https://www.trendlyne.com" title="DVM scores, promoter pledging, analyst consensus">
+              <span class="hub-icon">📈</span><span class="hub-name">Trendlyne</span>
+            </button>
+            <button class="hub-btn" data-url="https://www.moneycontrol.com" title="Peer comparisons, broker research, news sentiment">
+              <span class="hub-icon">💹</span><span class="hub-name">Moneycontrol</span>
+            </button>
+            <button class="hub-btn" data-url="https://www.groww.in" title="Retail-friendly fundamentals, MF data">
+              <span class="hub-icon">🌱</span><span class="hub-name">Groww</span>
+            </button>
+            <button class="hub-btn" data-url="https://www.tijorifinance.com" title="Detailed segment-level financials, NSE/BSE">
+              <span class="hub-icon">🗄️</span><span class="hub-name">Tijori Finance</span>
+            </button>
+            <button class="hub-btn" data-url="https://stockanalysis.in/stocks" title="Free fundamental screener, export-ready">
+              <span class="hub-icon">🔍</span><span class="hub-name">StockAnalysis</span>
+            </button>
+          </div>
         </div>
 
-        <!-- Main Content Table -->
-        <div class="card" style="flex: 1; display: flex; flex-direction: column;">
-          <div class="card-label" id="fun-table-title" style="margin-bottom: 15px; color: var(--purple); font-size: 1.1em;">Select a Category</div>
-          <div style="overflow-y: auto; flex: 1;">
-            <table class="market-table" style="width: 100%;">
+        <!-- Broker APIs -->
+        <div class="hub-group">
+          <div class="hub-group-label broker">🔵 BROKER APIs</div>
+          <div class="hub-group-btns">
+            <button class="hub-btn" data-url="https://kite.trade" title="REST + WebSocket, real-time quotes, order execution">
+              <span class="hub-icon">🪁</span><span class="hub-name">Zerodha Kite</span>
+            </button>
+            <button class="hub-btn" data-url="https://kite.trade/docs/connect/v3" title="Full API documentation v3">
+              <span class="hub-icon">📄</span><span class="hub-name">Kite Docs v3</span>
+            </button>
+            <button class="hub-btn" data-url="https://developers.kite.trade" title="Create your app, get API keys">
+              <span class="hub-icon">🔑</span><span class="hub-name">Kite Portal</span>
+            </button>
+            <button class="hub-btn" data-url="https://smartapi.angelbroking.com" title="Free API, NSE/BSE real-time + historical">
+              <span class="hub-icon">😇</span><span class="hub-name">Angel SmartAPI</span>
+            </button>
+            <button class="hub-btn" data-url="https://upstox.com/developer/api-documentation" title="Alternative broker API, good WebSocket support">
+              <span class="hub-icon">⬆️</span><span class="hub-name">Upstox API</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Paid / Institutional -->
+        <div class="hub-group">
+          <div class="hub-group-label paid">🟡 PAID / INSTITUTIONAL</div>
+          <div class="hub-group-btns">
+            <button class="hub-btn" data-url="https://trendlyne.com/developers/api" title="Fundamentals, forecasts, DVM scores (~₹2000/mo)">
+              <span class="hub-icon">🧮</span><span class="hub-name">Trendlyne API</span>
+            </button>
+            <button class="hub-btn" data-url="https://www.wisesheets.io" title="Fundamentals in Excel/Google Sheets (~$10/mo)">
+              <span class="hub-icon">📑</span><span class="hub-name">Wisesheets</span>
+            </button>
+            <button class="hub-btn" data-url="https://www.wisesheets.io/database" title="API-ready fundamentals for screeners & apps">
+              <span class="hub-icon">🗃️</span><span class="hub-name">Wisesheets DB</span>
+            </button>
+            <button class="hub-btn" data-url="https://www.refinitiv.com/en/products/eikon-trading-software" title="Institutional-grade, full financials globally">
+              <span class="hub-icon">🌐</span><span class="hub-name">Refinitiv Eikon</span>
+            </button>
+            <button class="hub-btn" data-url="https://professional.bloomberg.com/products/bloomberg-terminal" title="Gold standard, university terminals free">
+              <span class="hub-icon">🖥️</span><span class="hub-name">Bloomberg</span>
+            </button>
+            <button class="hub-btn" data-url="https://globaldatafeeds.in/apis" title="Authorized NSE/BSE real-time API vendor">
+              <span class="hub-icon">📡</span><span class="hub-name">GlobalDatafeeds</span>
+            </button>
+            <button class="hub-btn" data-url="https://www.truedata.in/products/marketdataapi" title="Low-latency NSE/BSE market data API">
+              <span class="hub-icon">⚡</span><span class="hub-name">TrueData</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Open Source -->
+        <div class="hub-group">
+          <div class="hub-group-label oss">🟣 OPEN SOURCE</div>
+          <div class="hub-group-btns">
+            <button class="hub-btn" data-url="https://pypi.org/project/nsetools" title="Python library for NSE historical data">
+              <span class="hub-icon">🐍</span><span class="hub-name">NSEpy</span>
+            </button>
+            <button class="hub-btn" data-url="https://pypi.org/project/pnsea" title="Python NSE API — options, insider trades, equity">
+              <span class="hub-icon">📦</span><span class="hub-name">PNSEA</span>
+            </button>
+            <button class="hub-btn" data-url="https://github.com/hi-imcodeman/stock-nse-india" title="GraphQL/REST API server for NSE data">
+              <span class="hub-icon">🔧</span><span class="hub-name">stock-nse-india</span>
+            </button>
+            <button class="hub-btn" data-url="https://github.com/jugaad-py/jugaad-trader" title="Unofficial NSE/BSE data scraper, Python">
+              <span class="hub-icon">🛠️</span><span class="hub-name">jugaad-trader</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Thematic Overlay -->
+        <div class="hub-group">
+          <div class="hub-group-label thematic">🔴 THEMATIC OVERLAY</div>
+          <div class="hub-group-btns">
+            <button class="hub-btn" data-url="https://efts.sec.gov/LATEST/search-index?q=%2213F%22&dateRange=custom" title="Institutional holdings data for mimicry layer">
+              <span class="hub-icon">🏛️</span><span class="hub-name">SEC EDGAR 13-F</span>
+            </button>
+            <button class="hub-btn" data-url="https://www.bseindia.com/corporates/ann.html" title="Indian institutional disclosure equivalent">
+              <span class="hub-icon">📋</span><span class="hub-name">BSE Filings</span>
+            </button>
+            <button class="hub-btn" data-url="https://www.nseindia.com/market-data/bulk-deal" title="Tracks large institutional trade activity">
+              <span class="hub-icon">📦</span><span class="hub-name">NSE Bulk Deals</span>
+            </button>
+            <button class="hub-btn" data-url="https://finviz.com/screener.ashx" title="Global sector heatmaps, thematic filters">
+              <span class="hub-icon">🗺️</span><span class="hub-name">Finviz</span>
+            </button>
+            <button class="hub-btn" data-url="https://pulse.zerodha.com" title="News sentiment for Indian markets">
+              <span class="hub-icon">💬</span><span class="hub-name">Pulse Zerodha</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════ Main Content Area ══════ -->
+      <div class="fun-workspace">
+
+        <!-- Sidebar -->
+        <div class="fun-sidebar">
+          <!-- Category Selector -->
+          <div class="card">
+            <div class="card-label">MARKET CAP FILTER</div>
+            <ul id="fun-category-list" style="list-style: none; padding-left: 0; margin-top: 10px; font-size: 13px; line-height: 2.2;">
+              <!-- Populated via JS -->
+            </ul>
+          </div>
+
+          <!-- Advanced Filters -->
+          <div class="card" style="margin-top: 16px;">
+            <div class="card-label">ADVANCED FILTERS</div>
+            <div class="fun-filters">
+              <div class="fun-filter-group">
+                <label>Search Company</label>
+                <input type="text" id="fun-search" placeholder="🔍 Type company name..." />
+              </div>
+              <div class="fun-filter-group">
+                <label>P/E Range</label>
+                <div class="fun-range-row">
+                  <input type="number" id="fun-pe-min" placeholder="Min" min="0" step="1" />
+                  <span class="fun-range-sep">→</span>
+                  <input type="number" id="fun-pe-max" placeholder="Max" min="0" step="1" />
+                </div>
+              </div>
+              <div class="fun-filter-group">
+                <label>Min ROCE (%)</label>
+                <input type="number" id="fun-roce-min" placeholder="e.g. 15" min="0" step="1" />
+              </div>
+              <div class="fun-filter-group">
+                <label>Min ROE (%)</label>
+                <input type="number" id="fun-roe-min" placeholder="e.g. 15" min="0" step="1" />
+              </div>
+              <button class="fun-reset-btn" id="fun-reset-filters">↻ Reset All Filters</button>
+            </div>
+          </div>
+
+          <!-- Quick Stats -->
+          <div class="card" style="margin-top: 16px;">
+            <div class="card-label">FILTER RESULTS</div>
+            <div class="fun-quick-stats">
+              <div class="fun-stat-item">
+                <span>Matching</span>
+                <strong id="fun-match-count">252</strong>
+              </div>
+              <div class="fun-stat-item">
+                <span>Avg P/E</span>
+                <strong id="fun-avg-pe">—</strong>
+              </div>
+              <div class="fun-stat-item">
+                <span>Avg ROCE</span>
+                <strong id="fun-avg-roce">—</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main Table Area -->
+        <div class="card fun-table-card">
+          <div class="fun-table-header">
+            <div class="card-label" id="fun-table-title">ALL COMPANIES</div>
+            <div class="fun-table-badge" id="fun-result-badge">252 stocks</div>
+          </div>
+          <div class="fun-table-scroll">
+            <table class="market-table fun-main-table" id="fun-main-table">
               <thead>
                 <tr>
-                  <th>COMPANY</th>
-                  <th>PRICE (₹)</th>
-                  <th>P/E</th>
-                  <th>MCAP (Cr)</th>
-                  <th>ROCE (%)</th>
-                  <th>ROE (%)</th>
+                  <th class="fun-sortable" data-sort="name">COMPANY ⇅</th>
+                  <th class="fun-sortable" data-sort="cmp">PRICE (₹) ⇅</th>
+                  <th class="fun-sortable" data-sort="pe">P/E ⇅</th>
+                  <th class="fun-sortable" data-sort="mcap">MCAP (Cr) ⇅</th>
+                  <th class="fun-sortable" data-sort="roce">ROCE (%) ⇅</th>
+                  <th class="fun-sortable" data-sort="roe">ROE (%) ⇅</th>
+                  <th>RESEARCH</th>
                 </tr>
               </thead>
               <tbody id="fun-tbody">
