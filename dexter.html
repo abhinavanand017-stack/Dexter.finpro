@@ -13,6 +13,7 @@
     href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap"
     rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="addons.css" />
 </head>
 
 <body data-mode="full" data-arousal="low">
@@ -41,7 +42,7 @@
   <!-- Pitch Deck Overlay -->
   <div id="pitch-deck-overlay" class="pitch-overlay hidden">
     <div class="pitch-modal">
-      <button class="pitch-close-btn" id="pitch-close-btn">&times;</button>
+      <button class="pitch-close-btn" id="pitch-close-btn" aria-label="Close pitch deck">&times;</button>
       <div class="pitch-slides">
         <!-- Slide 1 -->
         <div class="pitch-slide active" data-slide="0">
@@ -117,6 +118,7 @@
 
   <!-- Top Nav -->
   <nav class="top-nav">
+    <div class="nav-row nav-row-top">
     <div class="nav-brand">
       <div class="brand-logo">
         <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
@@ -132,24 +134,9 @@
         </svg>
       </div>
       <div>
-        <span class="brand-name">DEXTER</span>
+        <h1 class="brand-name">Dexter — Bio-Algorithmic Trading Dashboard</h1>
         <span class="brand-sub">Bio-Algorithmic Engine v2.4</span>
       </div>
-    </div>
-
-    <div class="nav-center">
-      <button class="nav-tab active" data-tab="dashboard" id="tab-dashboard">Dashboard</button>
-      <button class="nav-tab" data-tab="market" id="tab-market">Market Scanner</button>
-      <button class="nav-tab" data-tab="mutualfunds" id="tab-mutualfunds">Mutual Funds</button>
-      <button class="nav-tab" data-tab="equity" id="tab-equity">Equity Screener</button>
-      <button class="nav-tab" data-tab="fundamentals" id="tab-fundamentals">Fundamental Screener</button>
-
-      <button class="nav-tab" data-tab="tracker" id="tab-tracker">Daily Tracker</button>
-      <button class="nav-tab" data-tab="forecasting" id="tab-forecasting">Forecasting</button>
-      <button class="nav-tab" data-tab="shadow" id="tab-shadow">Shadow Portfolio</button>
-      <button class="nav-tab" data-tab="behavioral" id="tab-behavioral">Behavioral Log</button>
-      <button class="nav-tab" data-tab="biometric" id="tab-biometric">Biometrics</button>
-      <button class="nav-tab" data-tab="demat" id="tab-demat">Broker Gateway</button>
     </div>
 
     <div class="nav-right">
@@ -157,15 +144,40 @@
         <span class="status-dot pulse"></span>
         <span class="status-text">NSE LIVE</span>
       </div>
-      <div class="biometric-pill" id="biometric-pill">
+      <div class="biometric-pill" id="biometric-pill" aria-label="Heart rate variability and arousal">
         <div class="hrv-icon">♥</div>
         <span id="nav-hrv">72 ms</span>
         <div class="arousal-bar">
           <div class="arousal-fill" id="nav-arousal-fill" style="width:23%"></div>
         </div>
       </div>
-      <button class="trigger-btn pitch-deck-btn" id="pitch-deck-btn">📊 Pitch Mode</button>
-      <button class="trigger-btn" id="trigger-circuit-breaker-btn">⚡ Test Circuit</button>
+      <button class="trigger-btn pitch-deck-btn" id="pitch-deck-btn" aria-label="Open pitch deck mode">📊 Pitch Mode</button>
+      <button class="trigger-btn" id="trigger-circuit-breaker-btn" aria-label="Test circuit breaker">⚡ Test Circuit</button>
+      <button class="trigger-btn danger-btn" id="simulate-cb-btn" aria-label="Simulate circuit breaker event">⚡ Simulate Breaker</button>
+      <label class="demo-toggle" id="demo-toggle" title="Toggle live demo simulation" aria-label="Toggle live demo">
+        <span class="demo-toggle-label">Live Demo</span>
+        <span class="demo-toggle-switch"><span class="demo-toggle-knob"></span></span>
+      </label>
+    </div>
+    </div>
+
+    <div class="nav-row nav-row-tabs">
+      <button class="nav-scroll-btn" id="nav-scroll-left" aria-label="Scroll tabs left">&#8249;</button>
+      <div class="nav-center" id="nav-center" role="tablist" aria-label="Dashboard sections">
+        <button class="nav-tab active" data-tab="dashboard" id="tab-dashboard" role="tab">Dashboard</button>
+        <button class="nav-tab" data-tab="market" id="tab-market" role="tab">Market Scanner</button>
+        <button class="nav-tab" data-tab="mutualfunds" id="tab-mutualfunds" role="tab">Mutual Funds</button>
+        <button class="nav-tab" data-tab="equity" id="tab-equity" role="tab">Equity Screener</button>
+        <button class="nav-tab" data-tab="fundamentals" id="tab-fundamentals" role="tab">Fundamental Screener</button>
+        <button class="nav-tab" data-tab="tracker" id="tab-tracker" role="tab">Daily Tracker</button>
+        <button class="nav-tab" data-tab="forecasting" id="tab-forecasting" role="tab">Forecasting</button>
+        <button class="nav-tab" data-tab="shadow" id="tab-shadow" role="tab">Shadow Portfolio</button>
+        <button class="nav-tab" data-tab="behavioral" id="tab-behavioral" role="tab">Behavioral Log</button>
+        <button class="nav-tab" data-tab="biometric" id="tab-biometric" role="tab">Biometrics</button>
+        <button class="nav-tab" data-tab="demat" id="tab-demat" role="tab">Broker Gateway</button>
+        <button class="nav-tab" data-tab="news" id="tab-news" role="tab">Market News</button>
+      </div>
+      <button class="nav-scroll-btn" id="nav-scroll-right" aria-label="Scroll tabs right">&#8250;</button>
     </div>
   </nav>
 
@@ -740,7 +752,15 @@
               <div class="index-filter-btns">
                 <button class="filter-btn active" data-index="ALL">ALL</button>
                 <button class="filter-btn" data-index="NIFTY">Nifty 50</button>
-                <button class="filter-btn" data-index="SENSEX">Sensex</button>
+                <button class="filter-btn" data-index="SENSEX">Sensex 30</button>
+              </div>
+              <div id="index-source-links" class="index-source-links">
+                <a id="idx-src-link" href="https://www.nseindia.com/market-data/live-equity-market?symbol=NIFTY%20500" target="_blank" rel="noopener noreferrer" class="idx-src-pill">
+                  <span class="idx-src-dot"></span>
+                  <span class="idx-src-label">Live source:</span>
+                  <span id="idx-src-name">NIFTY 500 · NSE Live Equity</span>
+                  <span class="idx-src-arrow">↗</span>
+                </a>
               </div>
             </div>
           </div>
@@ -928,7 +948,7 @@
                   <th>FUND NAME</th>
                   <th>RATING</th>
                   <th>NAV (₹)</th>
-                  <th>3Y RETURN</th>
+                  <th id="mf-return-th">3Y RETURN</th>
                 </tr>
               </thead>
               <tbody id="mf-tbody">
@@ -938,6 +958,7 @@
           </div>
         </div>
       </div>
+
     </div>
 
     
@@ -1088,22 +1109,81 @@
     <!-- ======================== FORECASTING TAB ======================== -->
     <div class="tab-panel" id="panel-forecasting">
       <div class="panel-header">
-        <h2>Stochastic Growth Forecasting & Prediction</h2>
-        <p>Estimated growth trajectories using mathematical models (GBM, Mean Reversion, Monte Carlo).</p>
+        <h2>Forecasting Lab</h2>
+        <p>World-class multi-model forecasting for Indian equities and mutual funds — 17 stock models, 5 MF models, fully deterministic and offline-reproducible.</p>
       </div>
 
-      <div class="card" style="background: rgba(255, 71, 87, 0.05); border-left: 4px solid var(--pink); padding: 16px; margin-bottom: 24px;">
-        <h4 style="color: var(--pink); margin: 0 0 8px 0;">⚠️ DISCLAIMER</h4>
-        <p style="color: var(--text-dim); margin: 0; font-size: 13px;">These predictions are based strictly on mathematical stochastic models (GBM/Monte Carlo/OU). They do not account for black-swan events, fundamental shifts, or behavioral contamination. Follow them under your own discretion.</p>
+      <div class="fc-subtab-bar">
+        <button class="fc-subtab active" data-sub="stock">📈 Stock Forecasting <span class="fc-sub-count">17 models</span></button>
+        <button class="fc-subtab" data-sub="mf">🏦 Mutual Fund Forecasting <span class="fc-sub-count">5 models</span></button>
       </div>
 
-      <div class="grid-row">
-        <!-- Main Projection Canvas -->
-        <div class="card wide chart-card" style="grid-column: span 3;">
+      <div class="card" style="background: rgba(255, 71, 87, 0.05); border-left: 4px solid var(--pink); padding: 14px; margin: 16px 0 18px;">
+        <h4 style="color: var(--pink); margin: 0 0 6px 0; font-size: 13px;">⚠️ DISCLAIMER</h4>
+        <p style="color: var(--text-dim); margin: 0; font-size: 12px; line-height: 1.55;">Forecasts are produced by deterministic mathematical models on seeded synthetic OHLCV for reproducibility. They are research outputs, not investment advice. Black-swan events, regime breaks, and behavioural contamination are out of scope. Trade at your own discretion.</p>
+      </div>
+
+      <!-- ─── SUB-PANEL · STOCK FORECASTING (17 models) ─── -->
+      <div class="fc-sub-panel active" id="fc-sub-stock">
+        <div class="card wide" style="padding: 20px;">
+          <div class="card-header" style="margin-bottom: 14px;">
+            <div>
+              <div class="card-label" style="color: var(--cyan);">Stock Prediction Suite · 17 Models</div>
+              <div class="card-sub">ARIMA · SARIMA · ETS · OLS · Ridge · RF · GBM · SVR · KNN · LSTM · GRU · Transformer · CNN · Prophet · Ensemble · Monte Carlo · WaveNet</div>
+            </div>
+          </div>
+          <div class="sps-controls">
+            <div class="sps-control">
+              <label>Ticker</label>
+              <select id="sps-ticker"></select>
+            </div>
+            <div class="sps-control">
+              <label>Forecast horizon <span id="sps-days-out" class="sps-days-out">30d</span></label>
+              <input type="range" id="sps-days" min="5" max="180" step="1" value="30"/>
+            </div>
+            <div class="sps-control sps-actions">
+              <button class="trigger-btn" id="sps-sel-all">Select All</button>
+              <button class="trigger-btn" id="sps-sel-none">Clear</button>
+              <button class="trigger-btn primary" id="sps-run">▶ Run Selected</button>
+              <button class="trigger-btn accent" id="sps-run-all">▶▶ Run All 17</button>
+            </div>
+          </div>
+          <div id="sps-model-grid" class="sps-model-grid"></div>
+          <div id="sps-chart-host" class="sps-chart-host">
+            <div class="sps-empty">Select models and click <strong>Run Selected</strong> to render forecasts.</div>
+          </div>
+          <div id="sps-table-host"></div>
+          <pre id="sps-log" class="sps-log"></pre>
+        </div>
+
+        <!-- ─── Multi-Model Prediction Suite (NIFTY / CNX 500) ─── -->
+        <div class="card wide" style="margin-top: 24px; padding: 20px;">
+          <div class="card-header" style="margin-bottom: 14px;">
+            <div>
+              <div class="card-label" style="color: var(--cyan);">Nifty / CNX-500 Multi-Model Pipeline</div>
+              <div class="card-sub">HMM regimes · Gradient-boosted direction classifier · ARIMA+EMA hybrid · Friction-aware backtest</div>
+            </div>
+            <div class="chart-tabs" style="display:flex; gap:8px; flex-wrap:wrap;">
+              <select id="mms-dataset" style="background: rgba(255,255,255,0.04); color: var(--text-primary); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 13px;">
+                <option value="CNX500_Index">CNX 500 Index</option>
+                <option value="Reliance">Reliance</option>
+                <option value="HDFC_Bank">HDFC Bank</option>
+                <option value="ICICI_Bank">ICICI Bank</option>
+                <option value="Bharti_Airtel">Bharti Airtel</option>
+                <option value="SBI">SBI</option>
+              </select>
+              <button class="trigger-btn" id="mms-run-one" style="background: rgba(0, 212, 255, 0.1); border-color: rgba(0, 212, 255, 0.25);">▶ Run Pipeline</button>
+              <button class="trigger-btn" id="mms-run-all" style="background: rgba(124, 92, 255, 0.1); border-color: rgba(124, 92, 255, 0.25);">▶▶ Run All Datasets</button>
+            </div>
+          </div>
+          <pre id="mms-output" style="background: rgba(0,0,0,0.35); border: 1px solid var(--border); border-radius: 8px; padding: 14px; font-family: var(--font-mono); font-size: 12px; color: var(--text-secondary); max-height: 540px; overflow: auto; white-space: pre; margin: 0;">Select a dataset and click Run Pipeline. Synthetic OHLCV (GBM seeded per stock) is used for offline reproducibility.</pre>
+        </div>
+
+        <div class="card wide chart-card" style="margin-top: 24px;">
           <div class="card-header">
             <div>
               <div class="card-label">Monte Carlo Stochastic Projections (1-Year)</div>
-              <div class="card-sub">Simulating 50 potential price paths using Geometric Brownian Motion</div>
+              <div class="card-sub">50 GBM paths · ₹ expected value / 5-95 percentile band</div>
             </div>
             <div class="chart-tabs">
               <button class="trigger-btn" id="run-monte-carlo-btn" style="background: rgba(0, 212, 255, 0.1); border-color: rgba(0, 212, 255, 0.25);">▶ Run Simulation</button>
@@ -1118,10 +1198,85 @@
           </div>
         </div>
       </div>
+
+      <!-- ─── SUB-PANEL · MUTUAL FUND FORECASTING ─── -->
+      <div class="fc-sub-panel" id="fc-sub-mf">
+        <div class="card wide" style="padding: 20px;">
+          <div class="card-header" style="margin-bottom: 14px;">
+            <div>
+              <div class="card-label" style="color: var(--purple);">Mutual Fund Category Forecasting Suite</div>
+              <div class="card-sub">Value Research category data (Jun 2026) · Momentum-MR · Linear trend · Regime scenarios · Sharpe rank · Monte Carlo NAV</div>
+            </div>
+            <div class="chart-tabs" style="display:flex; gap:8px; flex-wrap:wrap;">
+              <button class="trigger-btn mfc-tab active" data-model="m1">1 · Momentum/MR</button>
+              <button class="trigger-btn mfc-tab" data-model="m2">2 · Trend Fcst</button>
+              <button class="trigger-btn mfc-tab" data-model="m3">3 · Regime ER</button>
+              <button class="trigger-btn mfc-tab" data-model="m4">4 · Sharpe Rank</button>
+              <button class="trigger-btn mfc-tab" data-model="m5">5 · Monte Carlo</button>
+            </div>
+          </div>
+          <pre id="mfc-output" style="background: rgba(0,0,0,0.35); border: 1px solid var(--border); border-radius: 8px; padding: 14px; font-family: var(--font-mono); font-size: 12px; color: var(--text-secondary); max-height: 540px; overflow: auto; white-space: pre; margin: 0;">Loading category data…</pre>
+        </div>
+      </div>
     </div>
     <!-- ======================== DAILY TRACKER TAB ======================== -->
     <div class="tab-panel" id="panel-tracker">
       <h2>Daily Tracker Module</h2>
+      <p style="color: var(--text-dim); margin-top:-6px; margin-bottom: 18px; font-size: 13px;">Live exchange feeds from NSE &amp; BSE, refreshed every market day. Track personal positions alongside official market pulse.</p>
+
+      <!-- ===== Official Exchange Pulse ===== -->
+      <div class="exchange-pulse-grid">
+        <div class="card exchange-card" data-exchange="nse">
+          <div class="exchange-header">
+            <div>
+              <div class="exchange-name">NSE — National Stock Exchange</div>
+              <div class="exchange-sub" id="nse-date">—</div>
+            </div>
+            <a href="https://www.nseindia.com/" target="_blank" rel="noopener noreferrer" class="exchange-open">Open NSE ↗</a>
+          </div>
+          <div class="exchange-metrics" id="nse-metrics"></div>
+          <div class="exchange-frame-wrap">
+            <iframe src="https://www.nseindia.com/" title="NSE Live" class="exchange-frame" loading="lazy" referrerpolicy="no-referrer"></iframe>
+            <div class="exchange-frame-fallback">
+              <div class="ef-fallback-title">NSE blocks embedded preview</div>
+              <div class="ef-fallback-sub">Tap the button below to open the official live terminal in a new tab.</div>
+              <a href="https://www.nseindia.com/" target="_blank" rel="noopener noreferrer" class="ef-fallback-btn">Launch NSE Live ↗</a>
+            </div>
+          </div>
+          <div class="exchange-links">
+            <a href="https://www.nseindia.com/market-data/live-equity-market?symbol=NIFTY%20500" target="_blank" rel="noopener noreferrer">Live Equity</a>
+            <a href="https://www.nseindia.com/market-data/most-active-equities" target="_blank" rel="noopener noreferrer">Most Active</a>
+            <a href="https://www.nseindia.com/market-data/top-gainers-losers" target="_blank" rel="noopener noreferrer">Gainers / Losers</a>
+            <a href="https://www.nseindia.com/companies-listing/corporate-filings-announcements" target="_blank" rel="noopener noreferrer">Corp. Filings</a>
+          </div>
+        </div>
+
+        <div class="card exchange-card" data-exchange="bse">
+          <div class="exchange-header">
+            <div>
+              <div class="exchange-name">BSE — Bombay Stock Exchange</div>
+              <div class="exchange-sub" id="bse-date">—</div>
+            </div>
+            <a href="https://www.bseindia.com/" target="_blank" rel="noopener noreferrer" class="exchange-open">Open BSE ↗</a>
+          </div>
+          <div class="exchange-metrics" id="bse-metrics"></div>
+          <div class="exchange-frame-wrap">
+            <iframe src="https://www.bseindia.com/" title="BSE Live" class="exchange-frame" loading="lazy" referrerpolicy="no-referrer"></iframe>
+            <div class="exchange-frame-fallback">
+              <div class="ef-fallback-title">BSE blocks embedded preview</div>
+              <div class="ef-fallback-sub">Open the official live terminal in a new tab.</div>
+              <a href="https://www.bseindia.com/" target="_blank" rel="noopener noreferrer" class="ef-fallback-btn">Launch BSE Live ↗</a>
+            </div>
+          </div>
+          <div class="exchange-links">
+            <a href="https://www.bseindia.com/markets/equity/EQReports/topgainers.aspx" target="_blank" rel="noopener noreferrer">Top Gainers</a>
+            <a href="https://www.bseindia.com/markets/equity/EQReports/toplosers.aspx" target="_blank" rel="noopener noreferrer">Top Losers</a>
+            <a href="https://www.bseindia.com/corporates/ann.html" target="_blank" rel="noopener noreferrer">Announcements</a>
+            <a href="https://www.bseindia.com/markets/MarketInfo/DispNewNoticesCirculars.aspx" target="_blank" rel="noopener noreferrer">Circulars</a>
+          </div>
+        </div>
+      </div>
+
       <div class="grid-row">
         <!-- Add Asset Form -->
         <div class="card" style="flex: 1;">
@@ -1166,12 +1321,36 @@
       </div>
     </div>
 
+    <!-- ======================== MARKET NEWS TAB ======================== -->
+    <div class="tab-panel" id="panel-news">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+        <div>
+          <h2 style="margin:0;">Market News <span style="color:var(--cyan);font-size:14px;font-weight:500;">● LIVE</span></h2>
+          <div style="font-size:12px;color:var(--text-dim);margin-top:4px;">Real-time feed sourced from Moneycontrol RSS · <span id="news-updated">Loading…</span></div>
+        </div>
+        <button id="news-refresh" style="padding:8px 16px;border-radius:6px;background:rgba(0,212,255,0.15);border:1px solid rgba(0,212,255,0.35);color:var(--cyan);cursor:pointer;font-weight:600;">↻ Refresh</button>
+      </div>
+      <div id="news-tabs" style="display:flex;flex-wrap:wrap;gap:6px;margin:18px 0;">
+        <button class="news-tab-btn active" data-idx="0">Markets</button>
+        <button class="news-tab-btn" data-idx="1">Business</button>
+        <button class="news-tab-btn" data-idx="2">Latest</button>
+        <button class="news-tab-btn" data-idx="3">Economy</button>
+        <button class="news-tab-btn" data-idx="4">Mutual Funds</button>
+      </div>
+      <div id="news-list" class="news-grid"></div>
+    </div>
+
   </main>
 
   <script src="funds_db.js"></script>
   <script src="stocks_db.js"></script>
   <script src="screener_db.js"></script>
+  <script src="forecast_suite.js"></script>
+  <script src="stock_models_suite.js"></script>
   <script src="app.js"></script>
+  <script src="addons.js"></script>
+  <script src="mf_enhanced.js"></script>
+  <script src="news_feed.js"></script>
 </body>
 
 </html>
