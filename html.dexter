@@ -1,0 +1,1356 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dexter — Bio-Algorithmic Trading Engine</title>
+  <meta name="description"
+    content="Dexter is a cognitive firewall between human impulse and capital markets. Bio-algorithmic trading intelligence powered by biometric signal processing and behavioral ML." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="addons.css" />
+</head>
+
+<body data-mode="full" data-arousal="low">
+
+  <!-- Animated Background Canvas -->
+  <canvas id="neural-canvas"></canvas>
+
+  <!-- Alert Overlay -->
+  <div id="circuit-breaker-overlay" class="circuit-overlay hidden">
+    <div class="circuit-modal">
+      <div class="circuit-icon">🛡️</div>
+      <h2>Circuit Breaker Activated</h2>
+      <p>Elevated biometric arousal detected. A 60-second reflection period has been initiated to protect your capital.
+      </p>
+      <div class="countdown-ring">
+        <svg viewBox="0 0 100 100" width="100" height="100">
+          <circle cx="50" cy="50" r="42" class="ring-bg" />
+          <circle cx="50" cy="50" r="42" class="ring-progress" id="countdown-ring-progress" />
+        </svg>
+        <span class="countdown-number" id="countdown-number">60</span>
+      </div>
+      <p class="circuit-sub">Breathe. Your algorithm is holding the position.</p>
+    </div>
+  </div>
+
+  <!-- Pitch Deck Overlay -->
+  <div id="pitch-deck-overlay" class="pitch-overlay hidden">
+    <div class="pitch-modal">
+      <button class="pitch-close-btn" id="pitch-close-btn" aria-label="Close pitch deck">&times;</button>
+      <div class="pitch-slides">
+        <!-- Slide 1 -->
+        <div class="pitch-slide active" data-slide="0">
+          <span class="slide-num">01 / 04</span>
+          <h2>The Problem is Biological</h2>
+          <p class="slide-lead">Retail investors don't underperform because they lack data — they underperform because
+            the human brain treats portfolio losses as predator threats. Adrenaline and cortisol are not SEC-registered
+            advisors.</p>
+          <div class="slide-illustration">
+            <div class="bio-threat-diagram">
+              <div class="threat-node adrenaline">Adrenaline Spike</div>
+              <div class="threat-node arrow">&rarr;</div>
+              <div class="threat-node cortisol">Cortisol Surge</div>
+              <div class="threat-node arrow">&rarr;</div>
+              <div class="threat-node decision">Impulsive Trade (Drag)</div>
+            </div>
+          </div>
+        </div>
+        <!-- Slide 2 -->
+        <div class="pitch-slide" data-slide="1">
+          <span class="slide-num">02 / 04</span>
+          <h2>Dexter: The Cognitive Firewall</h2>
+          <p class="slide-lead">Dexter maps live biometric signals directly to portfolio optimization, increasing risk
+            aversion (λ) or locking controls when stress limits are breached.</p>
+          <div class="slide-features">
+            <div class="slide-feat-card">
+              <div class="slide-feat-icon">🧬</div>
+              <strong>Multi-modal Fusion</strong>
+              <p>HRV + webcam facial micro-expressions + cursor erraticity speed</p>
+            </div>
+            <div class="slide-feat-card">
+              <div class="slide-feat-icon">⚙️</div>
+              <strong>Dynamic Risk Tuning</strong>
+              <p>Real-time quadratic programming adjusting optimal portfolio frontier weights</p>
+            </div>
+          </div>
+        </div>
+        <!-- Slide 3 -->
+        <div class="pitch-slide" data-slide="2">
+          <span class="slide-num">03 / 04</span>
+          <h2>Divergence & Behavioral Drag</h2>
+          <p class="slide-lead">Our parallel Shadow Portfolio demonstrates a persistent P&L bleed from human overrides
+            compared to clean algorithmic execution.</p>
+          <div class="slide-metrics">
+            <div class="slide-metric-box">
+              <strong>-₹90,700</strong>
+              <span>Lost to Emotional Decisions</span>
+            </div>
+            <div class="slide-metric-box">
+              <strong>+4.5%</strong>
+              <span>Annual Return Alpha Lift</span>
+            </div>
+          </div>
+        </div>
+        <!-- Slide 4 -->
+        <div class="pitch-slide" data-slide="3">
+          <span class="slide-num">04 / 04</span>
+          <h2>The Moat: Behavioral Data</h2>
+          <p class="slide-lead">By building your Cognitive Alpha Fingerprint over 12 months, Dexter creates an
+            irreplaceable, proprietary stress profile with high switching costs.</p>
+          <div class="pitch-moat-footer">
+            <h3>Start building your cognitive alpha fingerprint today.</h3>
+          </div>
+        </div>
+      </div>
+      <div class="pitch-nav">
+        <button class="pitch-nav-btn" id="pitch-prev-btn">&larr; Previous</button>
+        <div class="pitch-dots" id="pitch-dots-container"></div>
+        <button class="pitch-nav-btn" id="pitch-next-btn">Next &rarr;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top Nav -->
+  <nav class="top-nav">
+    <div class="nav-row nav-row-top">
+    <div class="nav-brand">
+      <div class="brand-logo">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+          <path d="M16 2L28 8V16C28 22.627 22.627 28 16 28C9.373 28 4 22.627 4 16V8L16 2Z" fill="url(#shieldGrad)" />
+          <path d="M11 16L14.5 19.5L21 13" stroke="white" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" />
+          <defs>
+            <linearGradient id="shieldGrad" x1="4" y1="2" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#00D4FF" />
+              <stop offset="1" stop-color="#7B2FBE" />
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+      <div>
+        <h1 class="brand-name">Dexter — Bio-Algorithmic Trading Dashboard</h1>
+        <span class="brand-sub">Bio-Algorithmic Engine v2.4</span>
+      </div>
+    </div>
+
+    <div class="nav-right">
+      <div class="market-status">
+        <span class="status-dot pulse"></span>
+        <span class="status-text">NSE LIVE</span>
+      </div>
+      <div class="biometric-pill" id="biometric-pill" aria-label="Heart rate variability and arousal">
+        <div class="hrv-icon">♥</div>
+        <span id="nav-hrv">72 ms</span>
+        <div class="arousal-bar">
+          <div class="arousal-fill" id="nav-arousal-fill" style="width:23%"></div>
+        </div>
+      </div>
+      <button class="trigger-btn pitch-deck-btn" id="pitch-deck-btn" aria-label="Open pitch deck mode">📊 Pitch Mode</button>
+      <button class="trigger-btn" id="trigger-circuit-breaker-btn" aria-label="Test circuit breaker">⚡ Test Circuit</button>
+      <button class="trigger-btn danger-btn" id="simulate-cb-btn" aria-label="Simulate circuit breaker event">⚡ Simulate Breaker</button>
+      <label class="demo-toggle" id="demo-toggle" title="Toggle live demo simulation" aria-label="Toggle live demo">
+        <span class="demo-toggle-label">Live Demo</span>
+        <span class="demo-toggle-switch"><span class="demo-toggle-knob"></span></span>
+      </label>
+    </div>
+    </div>
+
+    <div class="nav-row nav-row-tabs">
+      <button class="nav-scroll-btn" id="nav-scroll-left" aria-label="Scroll tabs left">&#8249;</button>
+      <div class="nav-center" id="nav-center" role="tablist" aria-label="Dashboard sections">
+        <button class="nav-tab active" data-tab="dashboard" id="tab-dashboard" role="tab">Dashboard</button>
+        <button class="nav-tab" data-tab="market" id="tab-market" role="tab">Market Scanner</button>
+        <button class="nav-tab" data-tab="mutualfunds" id="tab-mutualfunds" role="tab">Mutual Funds</button>
+        <button class="nav-tab" data-tab="equity" id="tab-equity" role="tab">Equity Screener</button>
+        <button class="nav-tab" data-tab="fundamentals" id="tab-fundamentals" role="tab">Fundamental Screener</button>
+        <button class="nav-tab" data-tab="tracker" id="tab-tracker" role="tab">Daily Tracker</button>
+        <button class="nav-tab" data-tab="forecasting" id="tab-forecasting" role="tab">Forecasting</button>
+        <button class="nav-tab" data-tab="shadow" id="tab-shadow" role="tab">Shadow Portfolio</button>
+        <button class="nav-tab" data-tab="behavioral" id="tab-behavioral" role="tab">Behavioral Log</button>
+        <button class="nav-tab" data-tab="biometric" id="tab-biometric" role="tab">Biometrics</button>
+        <button class="nav-tab" data-tab="demat" id="tab-demat" role="tab">Broker Gateway</button>
+        <button class="nav-tab" data-tab="news" id="tab-news" role="tab">Market News</button>
+      </div>
+      <button class="nav-scroll-btn" id="nav-scroll-right" aria-label="Scroll tabs right">&#8250;</button>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main-content">
+
+    <!-- ======================== DASHBOARD TAB ======================== -->
+    <div class="tab-panel active" id="panel-dashboard">
+
+      <!-- Top Row: Dexter Score + Key Metrics -->
+      <div class="grid-row top-row">
+
+        <!-- Dexter Score Card -->
+        <div class="card dexter-score-card" id="dexter-score-card">
+          <div class="card-label">DEXTER SCORE</div>
+          <div class="score-display">
+            <svg class="score-ring" viewBox="0 0 200 200">
+              <defs>
+                <linearGradient id="scoreGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#00D4FF" />
+                  <stop offset="50%" stop-color="#7B2FBE" />
+                  <stop offset="100%" stop-color="#FF6B35" />
+                </linearGradient>
+              </defs>
+              <circle cx="100" cy="100" r="85" class="score-ring-bg" />
+              <circle cx="100" cy="100" r="85" class="score-ring-fill" id="score-ring-fill"
+                style="stroke-dashoffset: 95;" />
+            </svg>
+            <div class="score-center">
+              <div class="score-number" id="dexter-score-number">87</div>
+              <div class="score-grade">ELITE</div>
+            </div>
+          </div>
+          <div class="score-breakdown">
+            <div class="score-item">
+              <span class="score-item-label">Sharpe Ratio</span>
+              <span class="score-item-val positive">2.14</span>
+            </div>
+            <div class="score-item">
+              <span class="score-item-label">Override Rate</span>
+              <span class="score-item-val neutral">4.3%</span>
+            </div>
+            <div class="score-item">
+              <span class="score-item-label">Behavioral Alpha</span>
+              <span class="score-item-val positive">+₹1.2L</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Biometric State -->
+        <div class="card biometric-card">
+          <div class="card-label">COGNITIVE STATE</div>
+          <div class="state-display">
+            <div class="state-orb" id="state-orb">
+              <div class="orb-inner" id="orb-inner">
+                <span class="orb-emoji" id="state-emoji">😌</span>
+              </div>
+              <div class="orb-rings"></div>
+            </div>
+            <div class="state-label" id="state-label">CALM & FOCUSED</div>
+          </div>
+          <div class="biometric-gauges">
+            <div class="gauge-row">
+              <span class="gauge-label">HRV</span>
+              <div class="gauge-track">
+                <div class="gauge-fill hrv-fill" id="hrv-gauge" style="width:68%"></div>
+              </div>
+              <span class="gauge-val" id="hrv-val">72ms</span>
+            </div>
+            <div class="gauge-row">
+              <span class="gauge-label">Arousal</span>
+              <div class="gauge-track">
+                <div class="gauge-fill arousal-fill-gauge" id="arousal-gauge" style="width:23%"></div>
+              </div>
+              <span class="gauge-val" id="arousal-val">0.23</span>
+            </div>
+            <div class="gauge-row">
+              <span class="gauge-label">Sleep Q</span>
+              <div class="gauge-track">
+                <div class="gauge-fill sleep-fill" id="sleep-gauge" style="width:82%"></div>
+              </div>
+              <span class="gauge-val" id="sleep-val">82%</span>
+            </div>
+            <div class="gauge-row">
+              <span class="gauge-label">Cursor σ</span>
+              <div class="gauge-track">
+                <div class="gauge-fill cursor-fill" id="cursor-gauge" style="width:15%"></div>
+              </div>
+              <span class="gauge-val" id="cursor-val">0.15</span>
+            </div>
+          </div>
+          <div class="circuit-status calm" id="circuit-status-badge">
+            ✓ Circuit Breakers: NOMINAL
+          </div>
+        </div>
+
+        <!-- Live P&L -->
+        <div class="card pnl-card">
+          <div class="card-label">TODAY'S P&L</div>
+          <div class="pnl-number positive" id="pnl-main">+₹18,430</div>
+          <div class="pnl-sub">+2.31% vs close</div>
+          <canvas id="pnl-sparkline" width="280" height="80"></canvas>
+          <div class="pnl-breakdown">
+            <div class="pnl-row">
+              <span>Algorithm Alpha</span>
+              <span class="positive">+₹21,200</span>
+            </div>
+            <div class="pnl-row">
+              <span>Behavioral Drag</span>
+              <span class="negative">-₹2,770</span>
+            </div>
+            <div class="pnl-row">
+              <span>Overrides Today</span>
+              <span class="neutral">2</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Risk Lambda -->
+        <div class="card lambda-card">
+          <div class="card-label">RISK LAMBDA (λ)</div>
+          <div class="lambda-display">
+            <div class="lambda-arc-wrap">
+              <canvas id="lambda-arc" width="200" height="120"></canvas>
+              <div class="lambda-val" id="lambda-val">0.63</div>
+              <div class="lambda-label-bio">Bio-adjusted</div>
+            </div>
+          </div>
+          <div class="lambda-legend">
+            <span class="legend-dot aggressive"></span><span>Aggressive (0.3)</span>
+            <span class="legend-dot current"></span><span>Current (0.63)</span>
+            <span class="legend-dot conservative"></span><span>Defensive (0.9)</span>
+          </div>
+          <div class="lambda-insight">HRV elevated → λ auto-increased by <strong>+0.12</strong> vs baseline</div>
+        </div>
+
+      </div>
+
+      <!-- Second Row: Charts -->
+      <div class="grid-row mid-row">
+
+        <!-- Portfolio Performance Chart -->
+        <div class="card chart-card wide">
+          <div class="card-header">
+            <div>
+              <div class="card-label">PORTFOLIO vs NIFTY 50</div>
+              <div class="card-sub">6-Month Returns — Bio-Adjusted Markowitz Optimization</div>
+            </div>
+            <div class="chart-tabs">
+              <button class="chart-tab active" data-range="1M">1M</button>
+              <button class="chart-tab" data-range="3M">3M</button>
+              <button class="chart-tab" data-range="6M">6M</button>
+            </div>
+          </div>
+          <canvas id="performance-chart" width="800" height="220"></canvas>
+        </div>
+
+        <!-- Pre-Market Brief -->
+        <div class="card brief-card">
+          <div class="card-header" style="margin-bottom: 8px;">
+            <div class="card-label" style="margin-bottom: 0;">PRE-MARKET BRIEF</div>
+            <button class="trigger-btn audio-brief-btn" id="audio-brief-btn" title="Speak brief report">🎙️
+              Listen</button>
+          </div>
+          <div class="brief-time">Today, 09:05 AM</div>
+          <div class="brief-content">
+            <div class="brief-item" id="brief-hrv-status">
+              <div class="brief-icon">🧬</div>
+              <div>
+                <strong>Biometrics Optimal</strong>
+                <p>HRV is +8% above your 30-day avg. Full autonomy mode active.</p>
+              </div>
+            </div>
+            <div class="brief-item">
+              <div class="brief-icon">📈</div>
+              <div>
+                <strong>3 Earnings Today</strong>
+                <p>INFY, WIPRO, TCS report. Expected σ: ±3.2%. Hedges auto-placed.</p>
+              </div>
+            </div>
+            <div class="brief-item">
+              <div class="brief-icon">🌐</div>
+              <div>
+                <strong>Macro Sentiment: Neutral</strong>
+                <p>Social contagion index: 0.21 (Low). No contamination risk.</p>
+              </div>
+            </div>
+            <div class="brief-item recommended">
+              <div class="brief-icon">🎯</div>
+              <div>
+                <strong>Recommended Posture</strong>
+                <p>Active — algorithm has full discretion. Trust the system today.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Third Row: Holdings + Activity -->
+      <div class="grid-row bottom-row">
+
+        <!-- Holdings Table -->
+        <div class="card holdings-card">
+          <div class="card-label">PORTFOLIO HOLDINGS</div>
+          <table class="holdings-table">
+            <thead>
+              <tr>
+                <th>Symbol</th>
+                <th>Weight</th>
+                <th>Day P&L</th>
+                <th>Risk Signal</th>
+                <th>Bio-Flag</th>
+              </tr>
+            </thead>
+            <tbody id="holdings-tbody">
+              <!-- JS populated -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Recent Activity Feed -->
+        <div class="card activity-card">
+          <div class="card-label">BEHAVIORAL FEED</div>
+          <div class="activity-feed" id="activity-feed">
+            <!-- JS populated -->
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Fourth Row: Institutional Mimicry -->
+      <div class="grid-row" style="margin-top: 4px;">
+        <div class="card mimicry-card wide" style="grid-column: span 3;">
+          <div class="card-label">Institutional Mimicry Layer</div>
+          <div class="mimicry-content">
+            <div class="mimicry-grid">
+              <div class="mimicry-column">
+                <div class="mimicry-status-bar">
+                  <span class="mimicry-status-title">Live Trigger:</span>
+                  <span class="mimicry-trigger-badge" id="mimicry-trigger-badge">INFY VOLATILITY SHIFT (+3.2%
+                    EXP)</span>
+                </div>
+                <div class="mimicry-narrative">
+                  <p>Dexter intercepts behavioral spikes. When biometrics reflect panic during sudden stock fluctuations,
+                    Dexter compares impulse against professional actions.</p>
+                </div>
+              </div>
+              <div class="mimicry-comparison">
+                <div class="mimicry-pane retail">
+                  <div class="pane-header">
+                    <span class="pane-tag">Impulsive Action</span>
+                    <h4>Retail Panic Response</h4>
+                  </div>
+                  <p>Panic sell INFY position immediately at market bottom to avoid immediate loss, locking in negative
+                    return.</p>
+                  <div class="pane-footer">
+                    <span class="drag-cost">Estimated Drag: -₹14,500</span>
+                  </div>
+                </div>
+                <div class="mimicry-pane institutional">
+                  <div class="pane-header">
+                    <span class="pane-tag calm">Dexter Calming Anchor</span>
+                    <h4>Institutional Desk Stance</h4>
+                  </div>
+                  <p>Maintain core allocation. Execute delta-neutral collars by selling out-of-the-money calls and
+                    buying puts, hedging overnight volatility.</p>
+                  <div class="pane-footer">
+                    <span class="alpha-gain">Target Return: +₹8,200</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="mimicry-action-bar">
+              <span class="mimicry-advice">Dexter recommendation: <strong>Stay calm. Allow the algorithm to execute
+                  collar hedges.</strong></span>
+              <button class="action-btn mimicry-exec-btn" id="mimicry-exec-btn">Execute Institutional Collar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ======================== SHADOW PORTFOLIO TAB ======================== -->
+    <div class="tab-panel" id="panel-shadow">
+      <div class="panel-header">
+        <h2>Shadow Portfolio — The Cost of Human Override</h2>
+        <p>Your actual portfolio vs. pure algorithmic execution. Every divergence is behavioral drag.</p>
+      </div>
+      <div class="grid-row">
+        <div class="card stat-card">
+          <div class="stat-label">Algorithm Portfolio</div>
+          <div class="stat-val positive">+₹4,82,300</div>
+          <div class="stat-sub">12-Month Return: +24.1%</div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-label">Your Actual Portfolio</div>
+          <div class="stat-val neutral">+₹3,91,600</div>
+          <div class="stat-sub">12-Month Return: +19.6%</div>
+        </div>
+        <div class="card stat-card highlight-bad">
+          <div class="stat-label">Behavioral Drag</div>
+          <div class="stat-val negative">-₹90,700</div>
+          <div class="stat-sub">Lost to emotional decisions</div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-label">Social Contagion Score</div>
+          <div class="stat-val neutral">0.34</div>
+          <div class="stat-sub">31% trades post-viral event</div>
+        </div>
+      </div>
+      <div class="card chart-card" style="margin-top:24px">
+        <div class="card-label">SHADOW vs ACTUAL — 12 MONTH CUMULATIVE RETURN</div>
+        <canvas id="shadow-chart" width="900" height="260"></canvas>
+      </div>
+      <div class="grid-row" style="margin-top:24px">
+        <div class="card override-card">
+          <div class="card-label">OVERRIDE AUTOPSY</div>
+          <div class="override-list" id="override-list">
+            <!-- JS populated -->
+          </div>
+        </div>
+        <div class="card contamination-card">
+          <div class="card-label">SOCIAL CONTAGION TIMELINE</div>
+          <canvas id="contagion-chart" width="400" height="240"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================== BEHAVIORAL LOG TAB ======================== -->
+    <div class="tab-panel" id="panel-behavioral">
+      <div class="panel-header">
+        <h2>Cognitive Alpha Fingerprint</h2>
+        <p>Your personal risk psychology profile — built from 12 months of biometric-correlated trade data.</p>
+      </div>
+      <div class="grid-row">
+        <div class="card wide chart-card">
+          <div class="card-label">BAD TRADE PROBABILITY BY HOUR & DAY</div>
+          <canvas id="heatmap-canvas" width="700" height="240"></canvas>
+        </div>
+        <div class="card">
+          <div class="card-label">TOP RISK CONDITIONS</div>
+          <div class="risk-conditions" id="risk-conditions">
+            <!-- JS populated -->
+          </div>
+        </div>
+      </div>
+      <div class="grid-row" style="margin-top:24px">
+        <div class="card chart-card">
+          <div class="card-label">FEATURE IMPORTANCE — BAD TRADE PREDICTOR</div>
+          <canvas id="feature-chart" width="500" height="260"></canvas>
+        </div>
+        <div class="card chart-card">
+          <div class="card-label">BEHAVIORAL ALPHA IMPROVEMENT OVER TIME</div>
+          <canvas id="alpha-improvement-chart" width="500" height="260"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================== BIOMETRICS TAB ======================== -->
+    <div class="tab-panel" id="panel-biometric">
+      <div class="panel-header">
+        <h2>Biometric Signal Processing</h2>
+        <p>Real-time multi-modal physiological data fusion driving your λ (risk aversion) parameter.</p>
+      </div>
+      <div class="grid-row">
+        <div class="card wide chart-card">
+          <div class="card-label">HRV TIME SERIES — TODAY</div>
+          <canvas id="hrv-chart" width="700" height="200"></canvas>
+        </div>
+        <div class="card">
+          <div class="card-label">SIGNAL SOURCES</div>
+          <div class="signal-sources">
+            <div class="source-item connected">
+              <span class="source-icon">⌚</span>
+              <div>
+                <strong>Apple Watch Ultra</strong>
+                <p>HRV · Heart Rate · Activity</p>
+                <span class="conn-badge">CONNECTED</span>
+              </div>
+            </div>
+            <div class="source-item connected">
+              <span class="source-icon">📹</span>
+              <div>
+                <strong>MediaPipe Face Mesh</strong>
+                <p>Micro-expressions · Brow tension</p>
+                <span class="conn-badge">ACTIVE</span>
+              </div>
+            </div>
+            <div class="source-item partial">
+              <span class="source-icon">🖱️</span>
+              <div>
+                <strong>Cursor Erraticity</strong>
+                <p>Velocity CoV · Click patterns</p>
+                <span class="conn-badge partial-badge">MONITORING</span>
+              </div>
+            </div>
+            <div class="source-item disconnected">
+              <span class="source-icon">💍</span>
+              <div>
+                <strong>Whoop Band</strong>
+                <p>Recovery · Strain · Sleep</p>
+                <span class="conn-badge disconnected-badge">OFFLINE</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="grid-row" style="margin-top:24px">
+        <div class="card chart-card">
+          <div class="card-label">AROUSAL SCORE DISTRIBUTION</div>
+          <canvas id="arousal-dist-chart" width="460" height="220"></canvas>
+        </div>
+        <div class="card chart-card">
+          <div class="card-label">λ ADJUSTMENT HISTORY (30 DAYS)</div>
+          <canvas id="lambda-history-chart" width="460" height="220"></canvas>
+        </div>
+        <div class="card">
+          <div class="card-label">30-DAY HRV BASELINE</div>
+          <div class="baseline-stats">
+            <div class="base-stat"><span>Mean HRV</span><strong>68.4 ms</strong></div>
+            <div class="base-stat"><span>Std Dev</span><strong>±6.2 ms</strong></div>
+            <div class="base-stat"><span>Today's Z-Score</span><strong class="positive">+0.58 σ</strong></div>
+            <div class="base-stat"><span>Sleep Quality (avg)</span><strong>76%</strong></div>
+            <div class="base-stat"><span>Stress Threshold</span><strong>0.75</strong></div>
+            <div class="base-stat"><span>Circuit Breakers Fired</span><strong>3 this month</strong></div>
+          </div>
+          <div class="cognitive-discount">
+            <div class="cd-label">Cognitive Discount Factor</div>
+            <div class="cd-value" id="cd-value">1.00x</div>
+            <div class="cd-sub">Sleep quality above threshold — no discount applied</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Biometric Backtester Card -->
+      <div class="grid-row" style="margin-top: 24px;">
+        <div class="card wide backtester-card" style="grid-column: span 3;">
+          <div class="card-header">
+            <div>
+              <div class="card-label">BIOMETRIC BACKTESTER</div>
+              <div class="card-sub">Replay historical trades against stress logs and calculate emotional drag.</div>
+            </div>
+            <div class="backtester-controls">
+              <button class="trigger-btn" id="bt-load-btn"
+                style="background: rgba(0, 212, 255, 0.1); border-color: rgba(0, 212, 255, 0.25);">📂 Load
+                Trades</button>
+              <button class="trigger-btn" id="bt-run-btn"
+                style="background: rgba(0, 229, 160, 0.1); border-color: rgba(0, 229, 160, 0.25);" disabled>▶ Run
+                Replay</button>
+              <button class="trigger-btn" id="bt-reset-btn"
+                style="background: rgba(255, 71, 87, 0.1); border-color: rgba(255, 71, 87, 0.25);" disabled>🔄
+                Reset</button>
+            </div>
+          </div>
+          <div class="backtester-workspace">
+            <div class="backtester-left">
+              <div class="progress-bar-container">
+                <div class="progress-bar-fill" id="bt-progress-fill"></div>
+              </div>
+              <canvas id="backtest-canvas" width="700" height="200"></canvas>
+            </div>
+            <div class="backtester-right">
+              <div class="bt-stat-grid">
+                <div class="bt-stat">
+                  <span class="bt-stat-lbl">Simulated Trades</span>
+                  <strong id="bt-trades-count">0</strong>
+                </div>
+                <div class="bt-stat">
+                  <span class="bt-stat-lbl">Stress Overlap</span>
+                  <strong id="bt-stress-overlap">0%</strong>
+                </div>
+                <div class="bt-stat">
+                  <span class="bt-stat-lbl">Saved by Circuit</span>
+                  <strong class="positive" id="bt-saved-capital">₹0</strong>
+                </div>
+                <div class="bt-stat">
+                  <span class="bt-stat-lbl">Cognitive Alpha</span>
+                  <strong class="positive" id="bt-cog-alpha">0.0%</strong>
+                </div>
+              </div>
+              <div class="bt-log" id="bt-log-feed">
+                <div class="bt-log-placeholder">Click 'Load Trades' to initialize simulation...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ======================== MARKET SCANNER TAB ======================== -->
+    <div class="tab-panel" id="panel-market">
+      <div class="panel-header">
+        <h2>Market Intelligence Scanner</h2>
+        <p>Real-time constituent monitoring across Nifty 50 and Sensex listings, tracked watches, and leading ETFs.</p>
+      </div>
+
+      <!-- Market Indices & Crisis Simulator Bar -->
+      <div class="indices-container-row">
+        <!-- Live Indices Cards -->
+        <div class="indices-ticker-bar">
+          <div class="index-card" id="nifty-card">
+            <div class="idx-left">
+              <div class="idx-name">NIFTY 50 (NSE Index)</div>
+              <div class="idx-status" id="nifty-status-tag">LIVE UPDATING</div>
+            </div>
+            <div class="idx-metrics">
+              <span class="idx-val" id="nifty-index-val">23,290.15</span>
+              <span class="idx-chg positive" id="nifty-index-chg">+0.85%</span>
+            </div>
+          </div>
+          <div class="index-card" id="sensex-card">
+            <div class="idx-left">
+              <div class="idx-name">SENSEX (BSE Index)</div>
+              <div class="idx-status" id="sensex-status-tag">LIVE UPDATING</div>
+            </div>
+            <div class="idx-metrics">
+              <span class="idx-val" id="sensex-index-val">76,432.50</span>
+              <span class="idx-chg positive" id="sensex-index-chg">+0.72%</span>
+            </div>
+          </div>
+          <div class="index-card" id="nifty500-card">
+            <div class="idx-left">
+              <div class="idx-name">NIFTY 500 (NSE)</div>
+              <div class="idx-status" id="nifty500-status-tag" style="color: var(--cyan)">P/E: 22.29 | FFM Cap: ₹193.94L Cr</div>
+            </div>
+            <div class="idx-metrics">
+              <span class="idx-val" id="nifty500-index-val">22,465.35</span>
+              <span class="idx-chg negative" id="nifty500-index-chg">-0.14%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Crisis Simulation Deck -->
+        <div class="crisis-control-deck">
+          <div class="crisis-deck-label">Crisis Simulation Panel</div>
+          <div class="regime-buttons">
+            <button class="regime-btn active" id="regime-nominal" onclick="setMarketRegime('nominal')"
+              title="Restore default live Yahoo Finance pricing feed">
+              <span class="btn-dot nominal"></span> Nominal (Live)
+            </button>
+            <button class="regime-btn" id="regime-gapdown" onclick="setMarketRegime('gapdown')"
+              title="Simulate pre-market -3.2% opening gap-down">
+              <span class="btn-dot gapdown"></span> Gap Down
+            </button>
+            <button class="regime-btn" id="regime-crash" onclick="setMarketRegime('crash')"
+              title="Simulate instant -5.5% flash crash and biometric panic lock">
+              <span class="btn-dot crash"></span> Flash Crash
+            </button>
+            <button class="regime-btn" id="regime-hedge" onclick="setMarketRegime('hedge')"
+              title="Toggle Delta Puts hedging mode (posture mitigation)">
+              <span class="btn-dot hedge"></span> Delta Puts
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="market-workspace">
+        <!-- Left Column: Nifty & Sensex Directory -->
+        <div class="card market-directory-card">
+          <div class="directory-header">
+            <div>
+              <div class="card-label" style="margin-bottom: 2px;">Market Indices Directory</div>
+              <span id="market-source-badge"
+                style="font-size: 10px; color: var(--text-dim); font-family: var(--font-mono);">Source:
+                Connecting...</span>
+            </div>
+            <div class="dir-controls">
+              <input type="text" id="market-search" placeholder="🔍 Search stock symbol..." />
+              <div class="index-filter-btns">
+                <button class="filter-btn active" data-index="ALL">ALL</button>
+                <button class="filter-btn" data-index="NIFTY">Nifty 50</button>
+                <button class="filter-btn" data-index="SENSEX">Sensex 30</button>
+              </div>
+              <div id="index-source-links" class="index-source-links">
+                <a id="idx-src-link" href="https://www.nseindia.com/market-data/live-equity-market?symbol=NIFTY%20500" target="_blank" rel="noopener noreferrer" class="idx-src-pill">
+                  <span class="idx-src-dot"></span>
+                  <span class="idx-src-label">Live source:</span>
+                  <span id="idx-src-name">NIFTY 500 · NSE Live Equity</span>
+                  <span class="idx-src-arrow">↗</span>
+                </a>
+              </div>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="market-table">
+              <thead>
+                <tr>
+                  <th>Symbol</th>
+                  <th>Company</th>
+                  <th>Index</th>
+                  <th>Live Price</th>
+                  <th>Day Chg</th>
+                  <th>Bid/Ask Spread</th>
+                  <th>Bio-Status</th>
+                  <th>Watch</th>
+                </tr>
+              </thead>
+              <tbody id="market-tbody">
+                <!-- JS populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Right Columns -->
+        <div class="market-side-columns">
+          <!-- Top: My Watchlist -->
+          <div class="card watchlist-card">
+            <div class="card-label">My Watchlist (Tracked Tickers)</div>
+            <div class="watchlist-list" id="watchlist-list">
+              <!-- JS populated -->
+            </div>
+          </div>
+
+          <!-- Bottom: Top Performing Stocks & ETFs -->
+          <div class="card top-performers-card">
+            <div class="card-label">Market Movers (Best & Worst)</div>
+            <div class="performers-list" id="performers-list">
+              <!-- JS populated -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================== BROKER GATEWAY TAB ======================== -->
+    <div class="tab-panel" id="panel-demat">
+      <div class="panel-header">
+        <h2>Broker Gateway Connection</h2>
+        <p>Establish a secure API link to your Demat account. Dexter filters outgoing trades through the cognitive
+          firewall.</p>
+      </div>
+
+      <div class="gateway-workspace">
+        <div class="gateway-left">
+          <!-- Connection form -->
+          <div class="card connection-settings-card">
+            <div class="card-label">API Configuration</div>
+            <div class="connection-status-banner disconnected" id="gateway-status-banner">
+              <span class="status-indicator-dot"></span>
+              <span class="status-indicator-text" id="gateway-status-text">GATEWAY STATUS: DISCONNECTED</span>
+            </div>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Preferred Broker</label>
+                <select id="broker-select">
+                  <option value="zerodha">Zerodha Kite Connect</option>
+                  <option value="angel">Angel One SmartAPI</option>
+                  <option value="upstox">Upstox Developer</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Client ID / User ID</label>
+                <input type="text" id="broker-client-id" placeholder="e.g. AB1234" value="ABHIN99" />
+              </div>
+              <div class="form-group">
+                <label>API Key</label>
+                <input type="password" id="broker-api-key" placeholder="Enter API Key" value="••••••••••••••••" />
+              </div>
+              <div class="form-group">
+                <label>API Secret / Token</label>
+                <input type="password" id="broker-api-secret" placeholder="Enter API Secret" value="••••••••••••••••" />
+              </div>
+              <div class="form-group">
+                <label>TOTP Secret / Authenticator PIN</label>
+                <input type="password" id="broker-totp" placeholder="Enter 6-digit TOTP key" value="123456" />
+              </div>
+            </div>
+            <button class="trigger-btn connect-btn" id="connect-broker-btn"
+              style="width: 100%; padding: 12px; margin-top: 16px; font-size: 13px; font-weight: 600;">Validate & Link
+              Demat Account</button>
+          </div>
+
+          <!-- Margin panel -->
+          <div class="card margin-panel-card">
+            <div class="card-label">Live Broker Account Margins</div>
+            <div class="margin-grid">
+              <div class="margin-stat">
+                <span>Free Capital Margin</span>
+                <strong id="margin-free-capital">₹5,00,000</strong>
+              </div>
+              <div class="margin-stat">
+                <span>Collateral Value</span>
+                <strong id="margin-collateral">₹3,20,000</strong>
+              </div>
+              <div class="margin-stat">
+                <span>Available Margin</span>
+                <strong id="margin-available" class="positive">₹8,20,000</strong>
+              </div>
+              <div class="margin-stat">
+                <span>Used Margin Today</span>
+                <strong id="margin-used" class="neutral">₹0</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="gateway-right">
+          <!-- Bio Guard Switch -->
+          <div class="card bioguard-card">
+            <div class="card-header" style="margin-bottom: 0;">
+              <div>
+                <div class="card-label" style="margin-bottom: 4px;">DEXTER BIOMETRIC GUARD</div>
+                <div class="card-sub">Intercept trades at gateway level if stress levels breach thresholds.</div>
+              </div>
+              <label class="switch-toggle">
+                <input type="checkbox" id="bioguard-toggle" checked>
+                <span class="slider-toggle-btn"></span>
+              </label>
+            </div>
+            <div class="bioguard-status-box active" id="bioguard-status-box">
+              <span class="bioguard-status-dot"></span>
+              <span class="bioguard-status-lbl" id="bioguard-status-lbl">BIO-GUARD SHIELD: ACTIVE & ARMED</span>
+            </div>
+          </div>
+
+          <!-- Webhook instructions -->
+          <div class="card webhook-card">
+            <div class="card-label">Secure Webhook API endpoint</div>
+            <p style="font-size: 11.5px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 12px;">Route
+              trades from external algorithms (TradingView, Python client, PineScript) directly through this Dexter
+              instance:</p>
+            <div class="webhook-url-box" id="webhook-url-box">
+              <span id="webhook-url-text">https://api.dexter-engine.local/v1/trade/webhook?token=8a3f721b</span>
+              <button id="copy-webhook-btn"
+                style="background:transparent; border:none; cursor:pointer; color:var(--cyan)">📋</button>
+            </div>
+          </div>
+
+          <!-- Live API log console -->
+          <div class="card console-card">
+            <div class="card-header" style="margin-bottom: 8px;">
+              <div class="card-label" style="margin-bottom: 0;">Broker API Gateway Console</div>
+              <button class="trigger-btn console-clear-btn" id="console-clear-btn"
+                style="padding: 2px 8px; font-size: 9px;">Clear Console</button>
+            </div>
+            <div class="terminal-body" id="broker-terminal">
+              <!-- Logs populated -->
+              <div class="term-entry">[GATEWAY] API gateway terminal listening on port 8080. Wait for authentication...
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>    <!-- ======================== MUTUAL FUNDS TAB ======================== -->
+    <div class="tab-panel" id="panel-mutualfunds">
+      <h2>Top 10 Mutual Funds Screener</h2>
+      <div style="display: flex; gap: 20px; margin-top: 15px; height: 600px;">
+        
+        <!-- Sidebar Tree -->
+        <div class="card" style="flex: 0 0 300px; overflow-y: auto; padding: 15px; border-right: 1px solid var(--border);">
+          <div class="card-label">CATEGORIES</div>
+          <ul id="mf-category-list" style="list-style: none; padding-left: 0; margin-top: 10px; font-size: 14px; line-height: 2.2;">
+            <!-- Populated via JS -->
+          </ul>
+        </div>
+
+        <!-- Main Content Table -->
+        <div class="card" style="flex: 1; display: flex; flex-direction: column;">
+          <div class="card-label" id="mf-table-title" style="margin-bottom: 15px; color: var(--purple); font-size: 1.1em;">Select a Category</div>
+          <div style="overflow-y: auto; flex: 1;">
+            <table class="market-table" style="width: 100%;">
+              <thead>
+                <tr>
+                  <th>FUND NAME</th>
+                  <th>RATING</th>
+                  <th>NAV (₹)</th>
+                  <th id="mf-return-th">3Y RETURN</th>
+                </tr>
+              </thead>
+              <tbody id="mf-tbody">
+                <!-- Populated via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    
+    <!-- ======================== EQUITY SCREENER TAB ======================== -->
+    <div class="tab-panel" id="panel-equity">
+      <h2>Equity Screener: BSE / NSE Stocks</h2>
+      <div style="display: flex; gap: 20px; margin-top: 15px; height: 600px;">
+        
+        <!-- Sidebar Tree -->
+        <div class="card" style="flex: 0 0 300px; overflow-y: auto; padding: 15px; border-right: 1px solid var(--border);">
+          <div class="card-label">STOCK CATEGORIES</div>
+          <ul id="eq-category-list" style="list-style: none; padding-left: 0; margin-top: 10px; font-size: 14px; line-height: 2.2;">
+            <!-- Populated via JS -->
+          </ul>
+        </div>
+
+        <!-- Main Content Table -->
+        <div class="card" style="flex: 1; display: flex; flex-direction: column;">
+          <div class="card-label" id="eq-table-title" style="margin-bottom: 15px; color: var(--purple); font-size: 1.1em;">Select a Category</div>
+          <div style="overflow-y: auto; flex: 1;">
+            <table class="market-table" style="width: 100%;">
+              <thead>
+                <tr>
+                  <th>SYMBOL</th>
+                  <th>LIVE PRICE (₹)</th>
+                  <th>% CHANGE</th>
+                </tr>
+              </thead>
+              <tbody id="eq-tbody">
+                <!-- Populated via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- ======================== FUNDAMENTALS TAB ======================== -->
+    <div class="tab-panel" id="panel-fundamentals">
+      <h2>Fundamental Screener — NIFTY 500</h2>
+      <p style="color: var(--text-dim); margin: 4px 0 16px; font-size: 13px;">Browse by sector, search by symbol, click any row to open the research panel.</p>
+
+      <div style="display: flex; gap: 20px; margin-top: 8px; height: 640px;">
+
+        <!-- Sidebar Tree -->
+        <div class="card" style="flex: 0 0 240px; overflow-y: auto; padding: 15px;">
+          <div class="card-label">SECTORS</div>
+          <ul id="fun-category-list" style="list-style: none; padding-left: 0; margin-top: 10px; font-size: 13px; line-height: 1.8;">
+            <!-- Populated via JS -->
+          </ul>
+        </div>
+
+        <!-- Main Content Table -->
+        <div class="card" style="flex: 1; display: flex; flex-direction: column; min-width: 0;">
+          <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 14px; flex-wrap: wrap;">
+            <div class="card-label" id="fun-table-title" style="margin: 0; color: var(--violet-l); font-size: 1.1em;">Select a sector</div>
+            <div style="flex: 1;"></div>
+            <input type="text" id="fun-search" placeholder="Search symbol..." style="padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border); background: rgba(255,255,255,0.03); color: var(--text-primary); font-size: 13px; outline: none; width: 200px;" autocomplete="off">
+            <span id="fun-count" style="font-size: 12px; color: var(--text-dim); white-space: nowrap;">0</span>
+          </div>
+          <div style="overflow-y: auto; flex: 1;">
+            <table class="market-table" style="width: 100%;">
+              <thead>
+                <tr id="fun-thead">
+                  <th data-sort="name" style="cursor:pointer;">COMPANY</th>
+                  <th data-sort="cmp" style="cursor:pointer; text-align:right;">PRICE (₹)</th>
+                  <th data-sort="chg" style="cursor:pointer; text-align:right;">DAY %</th>
+                  <th data-sort="pe" style="cursor:pointer; text-align:right;">P/E</th>
+                  <th data-sort="mcap" style="cursor:pointer; text-align:right;">MCAP (Cr)</th>
+                  <th data-sort="roce" style="cursor:pointer; text-align:right;">ROCE %</th>
+                  <th data-sort="roe" style="cursor:pointer; text-align:right;">ROE %</th>
+                </tr>
+              </thead>
+              <tbody id="fun-tbody">
+                <!-- Populated via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Research Detail Modal -->
+      <div id="research-overlay" class="research-overlay hidden">
+        <div class="research-modal">
+          <button class="research-close" id="research-close-btn">&times;</button>
+          <div id="research-content"></div>
+        </div>
+      </div>
+
+      <!-- Data Sources & APIs -->
+      <div style="margin-top: 32px;" id="ds-root">
+        <h2 style="margin-bottom: 6px;">Data Sources & APIs</h2>
+        <p style="color: var(--text-dim); margin: 0 0 20px 0; font-size: 13px;">Curated stack of fundamental data, broker APIs, institutional feeds & open-source tools for the Indian markets.</p>
+
+        <div class="ds-toolbar">
+          <div class="ds-search-wrap">
+            <span class="ds-search-icon">🔎</span>
+            <input type="text" id="ds-search" placeholder="Search data sources..." autocomplete="off" />
+          </div>
+          <div class="ds-pills" id="ds-pills">
+            <button class="ds-pill active" data-cat="all">All</button>
+            <button class="ds-pill" data-cat="free">Free</button>
+            <button class="ds-pill" data-cat="broker">Broker</button>
+            <button class="ds-pill" data-cat="paid">Paid</button>
+            <button class="ds-pill" data-cat="oss">Open Source</button>
+            <button class="ds-pill" data-cat="overlay">Overlay</button>
+          </div>
+          <span class="ds-count" id="ds-count">0 sources</span>
+        </div>
+
+        <div class="card ds-section" data-cat="free" style="margin-bottom: 18px;">
+          <div class="card-label" style="color: var(--purple); font-size: 1.05em; margin-bottom: 12px;">FREE — INDIAN MARKETS</div>
+          <div class="ds-grid" id="ds-free"></div>
+        </div>
+
+        <div class="card ds-section" data-cat="broker" style="margin-bottom: 18px;">
+          <div class="card-label" style="color: var(--green); font-size: 1.05em; margin-bottom: 12px;">BROKER APIs — EXECUTION + DATA</div>
+          <div class="ds-grid" id="ds-broker"></div>
+        </div>
+
+        <div class="card ds-section" data-cat="paid" style="margin-bottom: 18px;">
+          <div class="card-label" style="color: var(--pink); font-size: 1.05em; margin-bottom: 12px;">PAID / INSTITUTIONAL</div>
+          <div class="ds-grid" id="ds-paid"></div>
+        </div>
+
+        <div class="card ds-section" data-cat="oss" style="margin-bottom: 18px;">
+          <div class="card-label" style="color: var(--cyan, #00d4ff); font-size: 1.05em; margin-bottom: 12px;">OPEN SOURCE / COMMUNITY</div>
+          <div class="ds-grid" id="ds-oss"></div>
+        </div>
+
+        <div class="card ds-section" data-cat="overlay" style="margin-bottom: 18px;">
+          <div class="card-label" style="color: var(--purple); font-size: 1.05em; margin-bottom: 12px;">DEXTER THEMATIC OVERLAY LAYER</div>
+          <div class="ds-grid" id="ds-overlay"></div>
+        </div>
+
+        <div class="card" style="background: rgba(124, 92, 255, 0.06); border-left: 4px solid var(--purple); padding: 16px;">
+          <h4 style="margin: 0 0 6px 0; color: var(--purple);">Recommended Starting Stack</h4>
+          <p style="color: var(--text-dim); margin: 0; font-size: 13px; line-height: 1.6;">
+            <strong>Screener.in</strong> for historical fundamentals →
+            <strong>Angel SmartAPI</strong> for live quotes &amp; execution (free) →
+            <strong>Trendlyne</strong> for forward estimates →
+            <strong>NSE Bulk Deals</strong> for institutional mimicry signals. ~90% coverage at near-zero cost.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================== FORECASTING TAB ======================== -->
+    <div class="tab-panel" id="panel-forecasting">
+      <div class="panel-header">
+        <h2>Forecasting Lab</h2>
+        <p>World-class multi-model forecasting for Indian equities and mutual funds — 17 stock models, 5 MF models, fully deterministic and offline-reproducible.</p>
+      </div>
+
+      <div class="fc-subtab-bar">
+        <button class="fc-subtab active" data-sub="stock">📈 Stock Forecasting <span class="fc-sub-count">17 models</span></button>
+        <button class="fc-subtab" data-sub="mf">🏦 Mutual Fund Forecasting <span class="fc-sub-count">5 models</span></button>
+      </div>
+
+      <div class="card" style="background: rgba(255, 71, 87, 0.05); border-left: 4px solid var(--pink); padding: 14px; margin: 16px 0 18px;">
+        <h4 style="color: var(--pink); margin: 0 0 6px 0; font-size: 13px;">⚠️ DISCLAIMER</h4>
+        <p style="color: var(--text-dim); margin: 0; font-size: 12px; line-height: 1.55;">Forecasts are produced by deterministic mathematical models on seeded synthetic OHLCV for reproducibility. They are research outputs, not investment advice. Black-swan events, regime breaks, and behavioural contamination are out of scope. Trade at your own discretion.</p>
+      </div>
+
+      <!-- ─── SUB-PANEL · STOCK FORECASTING (17 models) ─── -->
+      <div class="fc-sub-panel active" id="fc-sub-stock">
+        <div class="card wide" style="padding: 20px;">
+          <div class="card-header" style="margin-bottom: 14px;">
+            <div>
+              <div class="card-label" style="color: var(--cyan);">Stock Prediction Suite · 17 Models</div>
+              <div class="card-sub">ARIMA · SARIMA · ETS · OLS · Ridge · RF · GBM · SVR · KNN · LSTM · GRU · Transformer · CNN · Prophet · Ensemble · Monte Carlo · WaveNet</div>
+            </div>
+          </div>
+          <div class="sps-controls">
+            <div class="sps-control">
+              <label>Ticker</label>
+              <select id="sps-ticker"></select>
+            </div>
+            <div class="sps-control">
+              <label>Forecast horizon <span id="sps-days-out" class="sps-days-out">30d</span></label>
+              <input type="range" id="sps-days" min="5" max="180" step="1" value="30"/>
+            </div>
+            <div class="sps-control sps-actions">
+              <button class="trigger-btn" id="sps-sel-all">Select All</button>
+              <button class="trigger-btn" id="sps-sel-none">Clear</button>
+              <button class="trigger-btn primary" id="sps-run">▶ Run Selected</button>
+              <button class="trigger-btn accent" id="sps-run-all">▶▶ Run All 17</button>
+            </div>
+          </div>
+          <div id="sps-model-grid" class="sps-model-grid"></div>
+          <div id="sps-chart-host" class="sps-chart-host">
+            <div class="sps-empty">Select models and click <strong>Run Selected</strong> to render forecasts.</div>
+          </div>
+          <div id="sps-table-host"></div>
+          <pre id="sps-log" class="sps-log"></pre>
+        </div>
+
+        <!-- ─── Multi-Model Prediction Suite (NIFTY / CNX 500) ─── -->
+        <div class="card wide" style="margin-top: 24px; padding: 20px;">
+          <div class="card-header" style="margin-bottom: 14px;">
+            <div>
+              <div class="card-label" style="color: var(--cyan);">Nifty / CNX-500 Multi-Model Pipeline</div>
+              <div class="card-sub">HMM regimes · Gradient-boosted direction classifier · ARIMA+EMA hybrid · Friction-aware backtest</div>
+            </div>
+            <div class="chart-tabs" style="display:flex; gap:8px; flex-wrap:wrap;">
+              <select id="mms-dataset" style="background: rgba(255,255,255,0.04); color: var(--text-primary); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 13px;">
+                <option value="CNX500_Index">CNX 500 Index</option>
+                <option value="Reliance">Reliance</option>
+                <option value="HDFC_Bank">HDFC Bank</option>
+                <option value="ICICI_Bank">ICICI Bank</option>
+                <option value="Bharti_Airtel">Bharti Airtel</option>
+                <option value="SBI">SBI</option>
+              </select>
+              <button class="trigger-btn" id="mms-run-one" style="background: rgba(0, 212, 255, 0.1); border-color: rgba(0, 212, 255, 0.25);">▶ Run Pipeline</button>
+              <button class="trigger-btn" id="mms-run-all" style="background: rgba(124, 92, 255, 0.1); border-color: rgba(124, 92, 255, 0.25);">▶▶ Run All Datasets</button>
+            </div>
+          </div>
+          <pre id="mms-output" style="background: rgba(0,0,0,0.35); border: 1px solid var(--border); border-radius: 8px; padding: 14px; font-family: var(--font-mono); font-size: 12px; color: var(--text-secondary); max-height: 540px; overflow: auto; white-space: pre; margin: 0;">Select a dataset and click Run Pipeline. Synthetic OHLCV (GBM seeded per stock) is used for offline reproducibility.</pre>
+        </div>
+
+        <div class="card wide chart-card" style="margin-top: 24px;">
+          <div class="card-header">
+            <div>
+              <div class="card-label">Monte Carlo Stochastic Projections (1-Year)</div>
+              <div class="card-sub">50 GBM paths · ₹ expected value / 5-95 percentile band</div>
+            </div>
+            <div class="chart-tabs">
+              <button class="trigger-btn" id="run-monte-carlo-btn" style="background: rgba(0, 212, 255, 0.1); border-color: rgba(0, 212, 255, 0.25);">▶ Run Simulation</button>
+            </div>
+          </div>
+          <canvas id="forecasting-canvas" width="900" height="300"></canvas>
+          <div class="forecasting-stats" style="display: flex; gap: 24px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);">
+            <div class="base-stat"><span>Expected Value (μ)</span><strong class="positive" id="fc-ev">--</strong></div>
+            <div class="base-stat"><span>95% Confidence Upper</span><strong class="positive" id="fc-p95">--</strong></div>
+            <div class="base-stat"><span>5% Confidence Lower</span><strong class="negative" id="fc-p5">--</strong></div>
+            <div class="base-stat"><span>Volatility (σ)</span><strong class="neutral" id="fc-vol">18.5%</strong></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── SUB-PANEL · MUTUAL FUND FORECASTING ─── -->
+      <div class="fc-sub-panel" id="fc-sub-mf">
+        <div class="card wide" style="padding: 20px;">
+          <div class="card-header" style="margin-bottom: 14px;">
+            <div>
+              <div class="card-label" style="color: var(--purple);">Mutual Fund Category Forecasting Suite</div>
+              <div class="card-sub">Value Research category data (Jun 2026) · Momentum-MR · Linear trend · Regime scenarios · Sharpe rank · Monte Carlo NAV</div>
+            </div>
+            <div class="chart-tabs" style="display:flex; gap:8px; flex-wrap:wrap;">
+              <button class="trigger-btn mfc-tab active" data-model="m1">1 · Momentum/MR</button>
+              <button class="trigger-btn mfc-tab" data-model="m2">2 · Trend Fcst</button>
+              <button class="trigger-btn mfc-tab" data-model="m3">3 · Regime ER</button>
+              <button class="trigger-btn mfc-tab" data-model="m4">4 · Sharpe Rank</button>
+              <button class="trigger-btn mfc-tab" data-model="m5">5 · Monte Carlo</button>
+            </div>
+          </div>
+          <pre id="mfc-output" style="background: rgba(0,0,0,0.35); border: 1px solid var(--border); border-radius: 8px; padding: 14px; font-family: var(--font-mono); font-size: 12px; color: var(--text-secondary); max-height: 540px; overflow: auto; white-space: pre; margin: 0;">Loading category data…</pre>
+        </div>
+      </div>
+    </div>
+    <!-- ======================== DAILY TRACKER TAB ======================== -->
+    <div class="tab-panel" id="panel-tracker">
+      <h2>Daily Tracker Module</h2>
+      <p style="color: var(--text-dim); margin-top:-6px; margin-bottom: 18px; font-size: 13px;">Live exchange feeds from NSE &amp; BSE, refreshed every market day. Track personal positions alongside official market pulse.</p>
+
+      <!-- ===== Official Exchange Pulse ===== -->
+      <div class="exchange-pulse-grid">
+        <div class="card exchange-card" data-exchange="nse">
+          <div class="exchange-header">
+            <div>
+              <div class="exchange-name">NSE — National Stock Exchange</div>
+              <div class="exchange-sub" id="nse-date">—</div>
+            </div>
+            <a href="https://www.nseindia.com/" target="_blank" rel="noopener noreferrer" class="exchange-open">Open NSE ↗</a>
+          </div>
+          <div class="exchange-metrics" id="nse-metrics"></div>
+          <div class="exchange-frame-wrap">
+            <iframe src="https://www.nseindia.com/" title="NSE Live" class="exchange-frame" loading="lazy" referrerpolicy="no-referrer"></iframe>
+            <div class="exchange-frame-fallback">
+              <div class="ef-fallback-title">NSE blocks embedded preview</div>
+              <div class="ef-fallback-sub">Tap the button below to open the official live terminal in a new tab.</div>
+              <a href="https://www.nseindia.com/" target="_blank" rel="noopener noreferrer" class="ef-fallback-btn">Launch NSE Live ↗</a>
+            </div>
+          </div>
+          <div class="exchange-links">
+            <a href="https://www.nseindia.com/market-data/live-equity-market?symbol=NIFTY%20500" target="_blank" rel="noopener noreferrer">Live Equity</a>
+            <a href="https://www.nseindia.com/market-data/most-active-equities" target="_blank" rel="noopener noreferrer">Most Active</a>
+            <a href="https://www.nseindia.com/market-data/top-gainers-losers" target="_blank" rel="noopener noreferrer">Gainers / Losers</a>
+            <a href="https://www.nseindia.com/companies-listing/corporate-filings-announcements" target="_blank" rel="noopener noreferrer">Corp. Filings</a>
+          </div>
+        </div>
+
+        <div class="card exchange-card" data-exchange="bse">
+          <div class="exchange-header">
+            <div>
+              <div class="exchange-name">BSE — Bombay Stock Exchange</div>
+              <div class="exchange-sub" id="bse-date">—</div>
+            </div>
+            <a href="https://www.bseindia.com/" target="_blank" rel="noopener noreferrer" class="exchange-open">Open BSE ↗</a>
+          </div>
+          <div class="exchange-metrics" id="bse-metrics"></div>
+          <div class="exchange-frame-wrap">
+            <iframe src="https://www.bseindia.com/" title="BSE Live" class="exchange-frame" loading="lazy" referrerpolicy="no-referrer"></iframe>
+            <div class="exchange-frame-fallback">
+              <div class="ef-fallback-title">BSE blocks embedded preview</div>
+              <div class="ef-fallback-sub">Open the official live terminal in a new tab.</div>
+              <a href="https://www.bseindia.com/" target="_blank" rel="noopener noreferrer" class="ef-fallback-btn">Launch BSE Live ↗</a>
+            </div>
+          </div>
+          <div class="exchange-links">
+            <a href="https://www.bseindia.com/markets/equity/EQReports/topgainers.aspx" target="_blank" rel="noopener noreferrer">Top Gainers</a>
+            <a href="https://www.bseindia.com/markets/equity/EQReports/toplosers.aspx" target="_blank" rel="noopener noreferrer">Top Losers</a>
+            <a href="https://www.bseindia.com/corporates/ann.html" target="_blank" rel="noopener noreferrer">Announcements</a>
+            <a href="https://www.bseindia.com/markets/MarketInfo/DispNewNoticesCirculars.aspx" target="_blank" rel="noopener noreferrer">Circulars</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-row">
+        <!-- Add Asset Form -->
+        <div class="card" style="flex: 1;">
+          <div class="card-label">ADD ASSET</div>
+          <div style="display: flex; gap: 10px; align-items: center; margin-top: 15px;">
+            <input type="text" id="tracker-ticker" list="tracker-ticker-list" placeholder="Type symbol (e.g., RELIANCE, INFY, TCS)..." autocomplete="off" style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--border); background: var(--bg-dark); color: white;">
+            <datalist id="tracker-ticker-list"></datalist>
+            <select id="tracker-type" style="padding: 8px; border-radius: 4px; border: 1px solid var(--border); background: var(--bg-dark); color: white;">
+              <option value="STOCK">Stock</option>
+              <option value="MF">Mutual Fund</option>
+            </select>
+            <button id="tracker-add-btn" style="padding: 8px 16px; border-radius: 4px; background: var(--purple); color: white; border: none; cursor: pointer;">Add to Tracker</button>
+          </div>
+          <div id="tracker-add-msg" style="margin-top: 8px; font-size: 12px; color: var(--text-dim); min-height: 16px;"></div>
+        </div>
+        <!-- Snapshot Controls -->
+        <div class="card" style="flex: 1; display: flex; align-items: center; justify-content: center;">
+          <button id="tracker-snapshot-btn" style="padding: 12px 24px; border-radius: 8px; background: var(--amber); color: #0a0a0f; border: none; font-weight: bold; cursor: pointer; display: flex; gap: 8px; align-items: center;">
+            <span style="font-size: 1.2em;">📸</span> Save Daily Snapshot
+          </button>
+        </div>
+      </div>
+      
+      <!-- Tracked Assets Table -->
+      <div class="card" style="margin-top: 20px;">
+        <div class="card-label">TRACKED ASSETS</div>
+        <table class="market-table" style="margin-top: 15px; width: 100%;">
+          <thead>
+            <tr>
+              <th>SYMBOL</th>
+              <th>TYPE</th>
+              <th>LIVE PRICE</th>
+              <th>DAY CHANGE</th>
+              <th>SPARKLINE (7D)</th>
+              <th>ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody id="tracker-tbody">
+            <!-- Populated via JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ======================== MARKET NEWS TAB ======================== -->
+    <div class="tab-panel" id="panel-news">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+        <div>
+          <h2 style="margin:0;">Market News <span style="color:var(--cyan);font-size:14px;font-weight:500;">● LIVE</span></h2>
+          <div style="font-size:12px;color:var(--text-dim);margin-top:4px;">Real-time feed sourced from Moneycontrol RSS · <span id="news-updated">Loading…</span></div>
+        </div>
+        <button id="news-refresh" style="padding:8px 16px;border-radius:6px;background:rgba(0,212,255,0.15);border:1px solid rgba(0,212,255,0.35);color:var(--cyan);cursor:pointer;font-weight:600;">↻ Refresh</button>
+      </div>
+      <div id="news-tabs" style="display:flex;flex-wrap:wrap;gap:6px;margin:18px 0;">
+        <button class="news-tab-btn active" data-idx="0">Markets</button>
+        <button class="news-tab-btn" data-idx="1">Business</button>
+        <button class="news-tab-btn" data-idx="2">Latest</button>
+        <button class="news-tab-btn" data-idx="3">Economy</button>
+        <button class="news-tab-btn" data-idx="4">Mutual Funds</button>
+      </div>
+      <div id="news-list" class="news-grid"></div>
+    </div>
+
+  </main>
+
+  <script src="funds_db.js"></script>
+  <script src="stocks_db.js"></script>
+  <script src="screener_db.js"></script>
+  <script src="forecast_suite.js"></script>
+  <script src="stock_models_suite.js"></script>
+  <script src="app.js"></script>
+  <script src="addons.js"></script>
+  <script src="mf_enhanced.js"></script>
+  <script src="news_feed.js"></script>
+</body>
+
+</html>

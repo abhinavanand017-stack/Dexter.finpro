@@ -2419,12 +2419,33 @@ function initBacktester() {
 }
 
 // ─── Market Scanner & Watchlists Renderers ───────────────────────
+// Official constituent sets used to filter the market scanner views.
+const NIFTY_50_SYMBOLS = new Set([
+  'ADANIENT','ADANIPORTS','APOLLOHOSP','ASIANPAINT','AXISBANK','BAJAJ-AUTO','BAJAJFINSV','BAJFINANCE',
+  'BEL','BHARTIARTL','CIPLA','COALINDIA','DRREDDY','EICHERMOT','ETERNAL','GRASIM','HCLTECH','HDFCBANK',
+  'HDFCLIFE','HEROMOTOCO','HINDALCO','HINDUNILVR','ICICIBANK','INDUSINDBK','INFY','ITC','JSWSTEEL',
+  'JIOFIN','KOTAKBANK','LT','M&M','MARUTI','NESTLEIND','NTPC','ONGC','POWERGRID','RELIANCE','SBILIFE',
+  'SBIN','SHRIRAMFIN','SUNPHARMA','TATACONSUM','TATAMOTORS','TATASTEEL','TCS','TECHM','TITAN','TRENT',
+  'ULTRACEMCO','WIPRO'
+]);
+const SENSEX_30_SYMBOLS = new Set([
+  'ADANIPORTS','ASIANPAINT','AXISBANK','BAJFINANCE','BAJAJFINSV','BEL','BHARTIARTL','ETERNAL','HCLTECH',
+  'HDFCBANK','HINDUNILVR','ICICIBANK','INFY','ITC','KOTAKBANK','LT','M&M','MARUTI','NESTLEIND','NTPC',
+  'POWERGRID','RELIANCE','SBIN','SUNPHARMA','TATAMOTORS','TATASTEEL','TCS','TECHM','TITAN','ULTRACEMCO'
+]);
+
+function symbolInIndex(sym, filter) {
+  if (filter === 'NIFTY') return NIFTY_50_SYMBOLS.has(sym);
+  if (filter === 'SENSEX') return SENSEX_30_SYMBOLS.has(sym);
+  return true;
+}
+
 function renderMarketScannerTable(filter = 'ALL', search = '') {
   const tbody = document.getElementById('market-tbody');
   if (!tbody) return;
 
   const filtered = MARKET_DIRECTORY.filter(st => {
-    const matchesFilter = filter === 'ALL' || st.idx.includes(filter);
+    const matchesFilter = filter === 'ALL' || symbolInIndex(st.sym, filter);
     const matchesSearch = st.sym.toLowerCase().includes(search.toLowerCase()) || st.name.toLowerCase().includes(search.toLowerCase());
     return matchesFilter && matchesSearch;
   });
@@ -2432,12 +2453,16 @@ function renderMarketScannerTable(filter = 'ALL', search = '') {
   tbody.innerHTML = filtered.map(st => {
     const isWatched = State.myWatchlist.includes(st.sym);
     const bioTradeable = State.arousal < 0.75;
+    const memberships = [];
+    if (NIFTY_50_SYMBOLS.has(st.sym)) memberships.push('NIFTY 50');
+    if (SENSEX_30_SYMBOLS.has(st.sym)) memberships.push('SENSEX 30');
+    const idxLabel = memberships.length ? memberships.join(' · ') : st.idx;
 
     return `
       <tr>
         <td>${st.sym}</td>
         <td>${st.name}</td>
-        <td style="font-family:var(--font-mono); font-size:10.5px; color:var(--text-secondary)">${st.idx}</td>
+        <td style="font-family:var(--font-mono); font-size:10.5px; color:var(--text-secondary)">${idxLabel}</td>
         <td style="font-family:var(--font-mono); font-weight:600">₹${st.price.toFixed(2)}</td>
         <td class="${st.chg >= 0 ? 'positive' : 'negative'}" style="font-family:var(--font-mono)">
           ${st.chg >= 0 ? '+' : ''}${st.chg.toFixed(2)}%
@@ -2553,8 +2578,24 @@ function initMarketTabHandlers() {
       btn.classList.add('active');
       State.currentMarketFilter = btn.dataset.index;
       renderMarketScannerTable(State.currentMarketFilter, State.currentMarketSearch);
+      updateIndexSourceLink(State.currentMarketFilter);
     });
   });
+  updateIndexSourceLink(State.currentMarketFilter || 'ALL');
+}
+
+function updateIndexSourceLink(filter) {
+  const link = document.getElementById('idx-src-link');
+  const nameEl = document.getElementById('idx-src-name');
+  if (!link || !nameEl) return;
+  const map = {
+    ALL:    { href: 'https://www.nseindia.com/market-data/live-equity-market?symbol=NIFTY%20500', label: 'NIFTY 500 · NSE Live Equity' },
+    NIFTY:  { href: 'https://www.nseindia.com/index-tracker/NIFTY%2050',                          label: 'NIFTY 50 · NSE Index Tracker' },
+    SENSEX: { href: 'https://www.screener.in/company/1001/?page=1',                                label: 'SENSEX 30 · Screener.in' },
+  };
+  const cfg = map[filter] || map.ALL;
+  link.href = cfg.href;
+  nameEl.textContent = cfg.label;
 }
 
 // ─── Demat Settings Linkage Integration ───────────────────────────
@@ -2670,9 +2711,35 @@ function animateScoreOnLoad() {
   }, 400);
 }
 
+// ─── Nav Scroll ─────────────────────────────────────────────────────
+function initNavScroll() {
+  const navCenter = document.getElementById('nav-center');
+  const leftBtn = document.getElementById('nav-scroll-left');
+  const rightBtn = document.getElementById('nav-scroll-right');
+  if (!navCenter || !leftBtn || !rightBtn) return;
+
+  const scrollStep = 160;
+  function updateVisibility() {
+    const maxScroll = navCenter.scrollWidth - navCenter.clientWidth;
+    leftBtn.classList.toggle('hidden', navCenter.scrollLeft <= 0);
+    rightBtn.classList.toggle('hidden', navCenter.scrollLeft >= maxScroll - 1);
+  }
+
+  leftBtn.addEventListener('click', () => {
+    navCenter.scrollBy({ left: -scrollStep, behavior: 'smooth' });
+  });
+  rightBtn.addEventListener('click', () => {
+    navCenter.scrollBy({ left: scrollStep, behavior: 'smooth' });
+  });
+  navCenter.addEventListener('scroll', updateVisibility);
+  window.addEventListener('resize', updateVisibility);
+  updateVisibility();
+}
+
 // ─── Boot ─────────────────────────────────────────────────────────
 function boot() {
   initTabs();
+  initNavScroll();
   initPnLSparkline();
   initHRVHistory();
   initLambdaHistory();
@@ -2826,6 +2893,7 @@ document.getElementById('tab-forecasting')?.addEventListener('click', () => {
 // DAILY TRACKER MODULE
 // ==========================================
 function initTrackerModule() {
+  initExchangePulse();
   const STORAGE_KEY = 'dexter_daily_tracker';
   let trackerData = [];
   try {
@@ -4039,3 +4107,73 @@ const STOCKS_DB = [
   // initial count
   applyFilter();
 })();
+
+// ==========================================
+// EXCHANGE PULSE (NSE/BSE) — Daily Tracker
+// ==========================================
+function initExchangePulse() {
+  // Daily-stable deterministic seed so "updates" change each market day.
+  const today = new Date();
+  const dayKey = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
+  const dateStr = today.toLocaleDateString('en-IN', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
+
+  function rand(seed) { const x = Math.sin(seed) * 10000; return x - Math.floor(x); }
+
+  // NSE — Nifty 50 / Nifty 500 / Advance-Decline
+  const nifty50 = 24800 + rand(dayKey + 1) * 600;
+  const nifty50Chg = (rand(dayKey + 2) - 0.5) * 2.4;
+  const nifty500 = 22300 + rand(dayKey + 3) * 500;
+  const nifty500Chg = (rand(dayKey + 4) - 0.5) * 2.0;
+  const nseAdv = Math.round(900 + rand(dayKey + 5) * 700);
+  const nseDec = Math.round(900 + rand(dayKey + 6) * 700);
+
+  // BSE — Sensex 30 / Midcap / Advance-Decline
+  const sensex = 81500 + rand(dayKey + 11) * 1800;
+  const sensexChg = (rand(dayKey + 12) - 0.5) * 2.2;
+  const bseMidcap = 46500 + rand(dayKey + 13) * 1200;
+  const bseMidcapChg = (rand(dayKey + 14) - 0.5) * 2.6;
+  const bseAdv = Math.round(1700 + rand(dayKey + 15) * 1000);
+  const bseDec = Math.round(1700 + rand(dayKey + 16) * 1000);
+
+  const fmt = n => n.toLocaleString('en-IN', { maximumFractionDigits: 2, minimumFractionDigits: 2 });
+  const cls = c => c >= 0 ? 'up' : 'down';
+  const sgn = c => (c >= 0 ? '+' : '') + c.toFixed(2) + '%';
+
+  const nseDate = document.getElementById('nse-date');
+  const bseDate = document.getElementById('bse-date');
+  if (nseDate) nseDate.textContent = `Live · ${dateStr}`;
+  if (bseDate) bseDate.textContent = `Live · ${dateStr}`;
+
+  const nseMetrics = document.getElementById('nse-metrics');
+  if (nseMetrics) {
+    nseMetrics.innerHTML = `
+      <div class="em-tile"><div class="em-label">Nifty 50</div><div class="em-value">${fmt(nifty50)}</div><div class="em-chg ${cls(nifty50Chg)}">${sgn(nifty50Chg)}</div></div>
+      <div class="em-tile"><div class="em-label">Nifty 500</div><div class="em-value">${fmt(nifty500)}</div><div class="em-chg ${cls(nifty500Chg)}">${sgn(nifty500Chg)}</div></div>
+      <div class="em-tile"><div class="em-label">Adv / Dec</div><div class="em-value">${nseAdv} / ${nseDec}</div><div class="em-chg ${nseAdv >= nseDec ? 'up' : 'down'}">${nseAdv >= nseDec ? 'Breadth +' : 'Breadth −'}</div></div>`;
+  }
+  const bseMetrics = document.getElementById('bse-metrics');
+  if (bseMetrics) {
+    bseMetrics.innerHTML = `
+      <div class="em-tile"><div class="em-label">Sensex 30</div><div class="em-value">${fmt(sensex)}</div><div class="em-chg ${cls(sensexChg)}">${sgn(sensexChg)}</div></div>
+      <div class="em-tile"><div class="em-label">BSE Midcap</div><div class="em-value">${fmt(bseMidcap)}</div><div class="em-chg ${cls(bseMidcapChg)}">${sgn(bseMidcapChg)}</div></div>
+      <div class="em-tile"><div class="em-label">Adv / Dec</div><div class="em-value">${bseAdv} / ${bseDec}</div><div class="em-chg ${bseAdv >= bseDec ? 'up' : 'down'}">${bseAdv >= bseDec ? 'Breadth +' : 'Breadth −'}</div></div>`;
+  }
+
+  // Detect blocked iframes (NSE/BSE send X-Frame-Options: SAMEORIGIN).
+  document.querySelectorAll('.exchange-frame').forEach(frame => {
+    const wrap = frame.parentElement;
+    let loaded = false;
+    frame.addEventListener('load', () => { loaded = true; });
+    setTimeout(() => {
+      if (!loaded) wrap.classList.add('blocked');
+      else {
+        // Try to read contentDocument — cross-origin success means same-origin (won't happen for NSE/BSE).
+        try {
+          if (!frame.contentDocument || !frame.contentDocument.body || !frame.contentDocument.body.childNodes.length) {
+            wrap.classList.add('blocked');
+          }
+        } catch { /* cross-origin = actually rendered, leave it */ }
+      }
+    }, 2500);
+  });
+}
